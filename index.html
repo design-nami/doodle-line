@@ -47,14 +47,14 @@
     .microfoot{position:fixed; left:22px; right:auto; top:auto; bottom:16px; text-align:left; z-index:1001; font-size:12px; letter-spacing:.02em; color:#000; pointer-events:none;}
   </style>
 
-<style id="r14-iosfix-title">
-/* Force black labels for controls on iPad/Safari */
+<style id="r17-ios-title-tweak">
+/* iPad Safari: force UI labels to black */
 #eraserBtn, #backBtn, #clearBtn, .sidebtn, .sidebtn span,
-button, input[type="button"], input[type="submit"], [role="button"], a[role="button"], .btn, .button {
-  color: #000 !important;
-  -webkit-text-fill-color: #000;
+button, input[type="button"], input[type="submit"], [role="button"], .btn, .button {
+  color:#000 !important;
+  -webkit-text-fill-color:#000;
 }
-/* Move the "Doodle Line" pill left by 1px (safe across positioning modes) */
+/* Shift title pill 1px left */
 .pill { transform: translateX(-1px); }
 </style>
 
@@ -1676,15 +1676,14 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 
-<!-- R14: Persist (no scaling) + MutationObserver + G21 overlay (coord-correct, 2:1 16x8, spread 48) -->
+<!-- R17: UI recover + persist(no-scale) + G21 overlay + safe runtime prune(21) -->
 <script>
 (function(){
-  if (window.__R14_PATCH_INSTALLED__) return;
-  window.__R14_PATCH_INSTALLED__ = true;
+  if (window.__R17_INSTALLED__) return; window.__R17_INSTALLED__ = true;
 
   function onReady(fn){
-    if(document.readyState!=='loading'){ try{fn();}catch(_){ } }
-    else { document.addEventListener('DOMContentLoaded', function(){ try{fn();}catch(_){ } }, {once:true}); }
+    if (document.readyState!=='loading'){ try{ fn(); }catch(e){} }
+    else { document.addEventListener('DOMContentLoaded', function(){ try{ fn(); }catch(e){} }, {once:true}); }
   }
 
   // ---------- G21 overlay (coordinate-correct) ----------
@@ -1715,15 +1714,12 @@ document.addEventListener('DOMContentLoaded', function(){
     var yCss = ev.clientY - r.top;
     var ratioX = cvs.width  / Math.max(1, r.width);
     var ratioY = cvs.height / Math.max(1, r.height);
-    var xDev = xCss * ratioX;
-    var yDev = yCss * ratioY;
+    var xDev = xCss * ratioX, yDev = yCss * ratioY;
     try{
       if (ctx && typeof ctx.getTransform === 'function'){
-        var m = ctx.getTransform();
-        var a=m.a, b=m.b, c=m.c, d=m.d, e=m.e, f=m.f;
+        var m = ctx.getTransform(), a=m.a, b=m.b, c=m.c, d=m.d, e=m.e, f=m.f;
         var det = a*d - b*c;
-        if (det !== 0){
-          var ia =  d/det, ib = -b/det, ic = -c/det, id =  a/det, ie = (c*f - d*e)/det, iff = (b*e - a*f)/det;
+        if (det){ var ia=d/det, ib=-b/det, ic=-c/det, id=a/det, ie=(c*f-d*e)/det, iff=(b*e-a*f)/det;
           return { x: ia*xDev + ic*yDev + ie, y: ib*xDev + id*yDev + iff };
         }
       }
@@ -1738,19 +1734,20 @@ document.addEventListener('DOMContentLoaded', function(){
       var steps=Math.max(1, Math.floor(dist/spacing)), ux=dx/steps, uy=dy/steps;
       var occ=new Map(), key=function(x,y){ return (Math.floor(x/minGap))+','+(Math.floor(y/minGap)); };
       var allow=function(x,y){ return !occ.has(key(x,y)); }, mark=function(x,y){ occ.set(key(x,y),1); };
-      ctx.save(); ctx.lineWidth=1; ctx.strokeStyle='#000'; ctx.lineCap='butt'; ctx.lineJoin='miter';
       var densPhase=Math.random()*Math.PI*2, phase=Math.random();
+      var cvs=(ctx && ctx.canvas), t = (ctx.getTransform && ctx.getTransform()) || null;
+      ctx.save(); ctx.lineWidth=1; ctx.strokeStyle='#000'; ctx.lineCap='butt'; ctx.lineJoin='miter';
       for(var i=0;i<=steps;i++){
-        var t=(i+phase)/steps;
-        var dens=0.35+0.65*(0.5 + 0.5*Math.sin(t*2*Math.PI*0.9 + densPhase));
+        var tt=(i+phase)/steps;
+        var dens=0.35+0.65*(0.5+0.5*Math.sin(tt*2*Math.PI*0.9 + densPhase));
         if(Math.random()>dens) continue;
         var x=a.x+ux*i+(Math.random()-0.5)*spread, y=a.y+uy*i+(Math.random()-0.5)*spread;
         if(!allow(x,y)) continue; mark(x,y);
         ctx.beginPath();
-        if(typeof ctx.ellipse==='function'){ ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2); ctx.stroke(); }
+        if (typeof ctx.ellipse==='function'){ ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2); ctx.stroke(); }
         else { ctx.arc(x,y,rx,0,Math.PI*2); ctx.stroke(); }
       }
-      ctx.restore();
+      ctx.restore(); if (t && ctx.setTransform) ctx.setTransform(t);
     }catch(_){}
   }
   function installG21Overlay(){
@@ -1774,106 +1771,90 @@ document.addEventListener('DOMContentLoaded', function(){
     cvs.addEventListener('pointercancel', up, {capture:true});
   }
 
-  // ---------- Persist across resize: no scaling + observer ----------
+  // ---------- Persist across resize (no scaling) with MutationObserver ----------
   function installPersist(){
     var cvs=document.getElementById('c'); if(!cvs || cvs.__persistInstalled) return;
     var ctx=cvs.getContext && cvs.getContext('2d'); if(!ctx) return;
     cvs.__persistInstalled = true;
-
-    var state = {
-      canvas: cvs,
-      back: document.createElement('canvas'),
-      btx: null,
-      lastSnap: 0,
-      mo: null
-    };
-    state.btx = state.back.getContext('2d');
+    var back=document.createElement('canvas'), btx=back.getContext('2d'), lastSnap=0;
 
     function snapshot(force){
       try{
-        var now=Date.now(); if(!force && (now-state.lastSnap)<200) return;
-        var c = state.canvas; if(!c) return;
-        state.back.width  = c.width;
-        state.back.height = c.height;
-        state.btx.setTransform(1,0,0,1,0,0);
-        state.btx.clearRect(0,0,state.back.width,state.back.height);
-        state.btx.drawImage(c, 0,0);
-        state.lastSnap = now;
+        var now=Date.now(); if(!force && (now-lastSnap)<200) return;
+        back.width=cvs.width; back.height=cvs.height;
+        btx.setTransform(1,0,0,1,0,0); btx.clearRect(0,0,back.width,back.height);
+        btx.drawImage(cvs,0,0); lastSnap=now;
       }catch(_){}
     }
-
     function restore(){
       try{
-        if (state.back.width===0 || state.back.height===0) return;
-        var c = state.canvas; if(!c) return;
-        var ctx = c.getContext('2d'); if(!ctx) return;
+        if (!back.width || !back.height) return;
         var t = (ctx.getTransform && ctx.getTransform()) || null;
         if (ctx.setTransform) ctx.setTransform(1,0,0,1,0,0);
-        // NO SCALING: draw 1:1 at top-left. If canvas shrank, excess is clipped.
-        ctx.drawImage(state.back, 0, 0);
+        ctx.drawImage(back, 0, 0); // 1:1 non-scaling
         if (t && ctx.setTransform) ctx.setTransform(t);
       }catch(_){}
     }
-
-    // Keep snapshot relatively fresh
-    state.canvas.addEventListener('pointerup', function(){ snapshot(true); }, {passive:true});
-    state.canvas.addEventListener('pointercancel', function(){ snapshot(true); }, {passive:true});
-
-    // Observe width/height mutations on the canvas and possible node replacement
-    var parent = state.canvas.parentNode || document.body;
-    state.mo = new MutationObserver(function(records){
-      var changed=false, replaced=false, newCanvas=null;
+    cvs.addEventListener('pointerup', function(){ snapshot(true); }, {passive:true});
+    cvs.addEventListener('pointercancel', function(){ snapshot(true); }, {passive:true});
+    try{
+      var origClear = CanvasRenderingContext2D.prototype.clearRect;
+      CanvasRenderingContext2D.prototype.clearRect = function(x,y,w,h){
+        origClear.call(this,x,y,w,h);
+        try{ if (this.canvas===cvs){ back.width=cvs.width; back.height=cvs.height; btx.setTransform(1,0,0,1,0,0); btx.clearRect(0,0,back.width,back.height); lastSnap=Date.now(); } }catch(_){}
+      };
+    }catch(_){}
+    // Observe size changes & node replacement
+    var parent = cvs.parentNode || document.body;
+    var mo = new MutationObserver(function(records){
+      var changed=false, newCanvas=null, replaced=false;
       for (var i=0;i<records.length;i++){
         var r=records[i];
-        if (r.type==='attributes' && r.target===state.canvas && (r.attributeName==='width' || r.attributeName==='height')){
-          changed=true;
-        }
+        if (r.type==='attributes' && r.target===cvs && (r.attributeName==='width' || r.attributeName==='height')) changed=true;
         if (r.type==='childList'){
-          if (r.removedNodes && r.removedNodes.length){
-            for (var j=0;j<r.removedNodes.length;j++){
-              var n=r.removedNodes[j];
-              if (n===state.canvas) { replaced=true; }
-            }
-          }
-          if (r.addedNodes && r.addedNodes.length){
-            for (var k=0;k<r.addedNodes.length;k++){
-              var a=r.addedNodes[k];
-              if (a.id==='c' || (a.querySelector && a.querySelector('#c'))){
-                newCanvas = (a.id==='c') ? a : a.querySelector('#c');
-              }
-            }
-          }
+          if (r.removedNodes){ for (var j=0;j<r.removedNodes.length;j++){ if (r.removedNodes[j]===cvs) replaced=true; } }
+          if (r.addedNodes){ for (var k=0;k<r.addedNodes.length;k++){ var a=r.addedNodes[k]; if (a.id==='c' || (a.querySelector && a.querySelector('#c'))){ newCanvas = (a.id==='c')?a:a.querySelector('#c'); } } }
         }
       }
-      if (changed){
-        setTimeout(restore, 0);
-        setTimeout(restore, 120);
-        setTimeout(restore, 360);
-      }
+      if (changed){ setTimeout(restore,0); setTimeout(restore,120); setTimeout(restore,360); }
       if (replaced || newCanvas){
-        var c = document.getElementById('c') || newCanvas;
-        if (c && c !== state.canvas){
-          state.canvas = c;
+        var next=document.getElementById('c')||newCanvas;
+        if (next && next!==cvs){
+          cvs=next; ctx=cvs.getContext('2d');
           installG21Overlay();
-          state.canvas.addEventListener('pointerup', function(){ snapshot(true); }, {passive:true});
-          state.canvas.addEventListener('pointercancel', function(){ snapshot(true); }, {passive:true});
-          setTimeout(restore, 0);
-          setTimeout(restore, 120);
-          setTimeout(restore, 360);
+          cvs.addEventListener('pointerup', function(){ snapshot(true); }, {passive:true});
+          cvs.addEventListener('pointercancel', function(){ snapshot(true); }, {passive:true});
+          setTimeout(restore,0); setTimeout(restore,120); setTimeout(restore,360);
         }
       }
     });
-    state.mo.observe(parent, { attributes:true, attributeFilter:['width','height'], subtree:true, childList:true });
+    mo.observe(parent, { attributes:true, attributeFilter:['width','height'], subtree:true, childList:true });
+    snapshot(true); setTimeout(snapshot,120);
+  }
 
-    // Initial snapshot now, and after a tick (in case engine paints late)
-    snapshot(true);
-    setTimeout(snapshot, 120);
+  // ---------- Runtime prune to 21 (safe) ----------
+  function pruneWhenReady(attempt){
+    attempt = attempt||0; if (attempt>20) return; // ~2s max
+    try{
+      var SB = window.seatToBrush, BR = window.BRUSHES, RM = window.RENDER_MODE;
+      if (!SB || !BR || !RM){ return void setTimeout(function(){ pruneWhenReady(attempt+1); }, 100); }
+      var seats = Object.keys(SB||{});
+      if (seats.length < 21){ return void setTimeout(function(){ pruneWhenReady(attempt+1); }, 100); }
+      var used = Object.create(null);
+      seats.forEach(function(s){ var id = SB[s]; if (id && typeof id==='string' && id!=='null' && id!=='empty'){ used[id]=1; } });
+      used['brush.ellipsesG21']=1;
+      Object.keys(BR).forEach(function(k){ if(!used[k]) delete BR[k]; });
+      Object.keys(RM).forEach(function(k){ if(!used[k]) delete RM[k]; });
+      console.info('[DoodleLine] pruned to', Object.keys(used).length, 'brushes (runtime safe)');
+    }catch(_){ /* swallow */ }
   }
 
   onReady(function(){
-    ensureG21Registry();
-    installG21Overlay();
-    installPersist();
+    try{ ensureG21Registry(); }catch(_){}
+    try{ installG21Overlay(); }catch(_){}
+    try{ installPersist(); }catch(_){}
+    // Defer prune to ensure seatToBrush/BRUSHES準備完了後
+    setTimeout(function(){ pruneWhenReady(0); }, 100);
   });
 })();
 </script>
