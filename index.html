@@ -46,6 +46,18 @@
 
     .microfoot{position:fixed; left:22px; right:auto; top:auto; bottom:16px; text-align:left; z-index:1001; font-size:12px; letter-spacing:.02em; color:#000; pointer-events:none;}
   </style>
+
+<style id="r14-iosfix-title">
+/* Force black labels for controls on iPad/Safari */
+#eraserBtn, #backBtn, #clearBtn, .sidebtn, .sidebtn span,
+button, input[type="button"], input[type="submit"], [role="button"], a[role="button"], .btn, .button {
+  color: #000 !important;
+  -webkit-text-fill-color: #000;
+}
+/* Move the "Doodle Line" pill left by 1px (safe across positioning modes) */
+.pill { transform: translateX(-1px); }
+</style>
+
 </head>
 <body>
   <div id="wrap">
@@ -1663,4 +1675,207 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 });
 </script>
+
+<!-- R14: Persist (no scaling) + MutationObserver + G21 overlay (coord-correct, 2:1 16x8, spread 48) -->
+<script>
+(function(){
+  if (window.__R14_PATCH_INSTALLED__) return;
+  window.__R14_PATCH_INSTALLED__ = true;
+
+  function onReady(fn){
+    if(document.readyState!=='loading'){ try{fn();}catch(_){ } }
+    else { document.addEventListener('DOMContentLoaded', function(){ try{fn();}catch(_){ } }, {once:true}); }
+  }
+
+  // ---------- G21 overlay (coordinate-correct) ----------
+  function isG21Active(){
+    try{ if (typeof window.currentSeat === 'function') return window.currentSeat()==='G21'; }catch(_){}
+    try{
+      var btn = document.querySelector('[data-seat="G21"]');
+      if (!btn) return false;
+      if (btn.classList && (btn.classList.contains('active') || btn.classList.contains('selected'))) return true;
+      if (btn.getAttribute && (btn.getAttribute('aria-pressed')==='true' || btn.getAttribute('data-active')==='1')) return true;
+    }catch(_){}
+    return false;
+  }
+  function ensureG21Registry(){
+    try{
+      if (window.BRUSHES && !window.BRUSHES['brush.ellipsesG21']){
+        window.BRUSHES['brush.ellipsesG21'] = {
+          params: { color:'#000', width:{min:1,max:1}, spacingPx:1, ell:{ rx:8, ry:4, spread:48, minGap:14 } }
+        };
+      }
+      if (window.RENDER_MODE){ window.RENDER_MODE['brush.ellipsesG21'] = 'immediate'; }
+      if (window.seatToBrush){ window.seatToBrush['G21'] = 'brush.ellipsesG21'; }
+    }catch(_){}
+  }
+  function toCtxXY(ev, cvs, ctx){
+    var r=cvs.getBoundingClientRect();
+    var xCss = ev.clientX - r.left;
+    var yCss = ev.clientY - r.top;
+    var ratioX = cvs.width  / Math.max(1, r.width);
+    var ratioY = cvs.height / Math.max(1, r.height);
+    var xDev = xCss * ratioX;
+    var yDev = yCss * ratioY;
+    try{
+      if (ctx && typeof ctx.getTransform === 'function'){
+        var m = ctx.getTransform();
+        var a=m.a, b=m.b, c=m.c, d=m.d, e=m.e, f=m.f;
+        var det = a*d - b*c;
+        if (det !== 0){
+          var ia =  d/det, ib = -b/det, ic = -c/det, id =  a/det, ie = (c*f - d*e)/det, iff = (b*e - a*f)/det;
+          return { x: ia*xDev + ic*yDev + ie, y: ib*xDev + id*yDev + iff };
+        }
+      }
+    }catch(_){}
+    return { x: xDev, y: yDev };
+  }
+  function drawEllipsesG21Segment(a,b, ctx){
+    try{
+      if(!ctx || !a || !b) return;
+      var rx=8, ry=4, spread=48, minGap=14, spacing=Math.max(1, minGap);
+      var dx=b.x-a.x, dy=b.y-a.y, dist=Math.hypot(dx,dy); if(!(dist>0)) return;
+      var steps=Math.max(1, Math.floor(dist/spacing)), ux=dx/steps, uy=dy/steps;
+      var occ=new Map(), key=function(x,y){ return (Math.floor(x/minGap))+','+(Math.floor(y/minGap)); };
+      var allow=function(x,y){ return !occ.has(key(x,y)); }, mark=function(x,y){ occ.set(key(x,y),1); };
+      ctx.save(); ctx.lineWidth=1; ctx.strokeStyle='#000'; ctx.lineCap='butt'; ctx.lineJoin='miter';
+      var densPhase=Math.random()*Math.PI*2, phase=Math.random();
+      for(var i=0;i<=steps;i++){
+        var t=(i+phase)/steps;
+        var dens=0.35+0.65*(0.5 + 0.5*Math.sin(t*2*Math.PI*0.9 + densPhase));
+        if(Math.random()>dens) continue;
+        var x=a.x+ux*i+(Math.random()-0.5)*spread, y=a.y+uy*i+(Math.random()-0.5)*spread;
+        if(!allow(x,y)) continue; mark(x,y);
+        ctx.beginPath();
+        if(typeof ctx.ellipse==='function'){ ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2); ctx.stroke(); }
+        else { ctx.arc(x,y,rx,0,Math.PI*2); ctx.stroke(); }
+      }
+      ctx.restore();
+    }catch(_){}
+  }
+  function installG21Overlay(){
+    var cvs=document.getElementById('c'); if(!cvs || cvs.__g21OverlayInstalled) return;
+    var ctx=cvs.getContext && cvs.getContext('2d'); if(!ctx) return;
+    cvs.__g21OverlayInstalled = true;
+    var isDown=false, last=null;
+    function down(ev){ if (!isG21Active()) return; if (ev.button!==undefined && ev.button!==0) return;
+      isDown=true; last=toCtxXY(ev,cvs,ctx); ev.preventDefault(); ev.stopImmediatePropagation();
+      try{ cvs.setPointerCapture && cvs.setPointerCapture(ev.pointerId); }catch(_){}
+    }
+    function move(ev){ if (!isDown || !isG21Active()) return; var cur=toCtxXY(ev,cvs,ctx);
+      drawEllipsesG21Segment(last,cur,ctx); last=cur; ev.preventDefault(); ev.stopImmediatePropagation(); }
+    function up(ev){ if(!isDown) return; isDown=false; last=null;
+      if (isG21Active()){ ev.preventDefault(); ev.stopImmediatePropagation(); }
+      try{ cvs.releasePointerCapture && cvs.releasePointerCapture(ev.pointerId); }catch(_){}
+    }
+    cvs.addEventListener('pointerdown', down, {capture:true});
+    cvs.addEventListener('pointermove', move, {capture:true});
+    cvs.addEventListener('pointerup', up, {capture:true});
+    cvs.addEventListener('pointercancel', up, {capture:true});
+  }
+
+  // ---------- Persist across resize: no scaling + observer ----------
+  function installPersist(){
+    var cvs=document.getElementById('c'); if(!cvs || cvs.__persistInstalled) return;
+    var ctx=cvs.getContext && cvs.getContext('2d'); if(!ctx) return;
+    cvs.__persistInstalled = true;
+
+    var state = {
+      canvas: cvs,
+      back: document.createElement('canvas'),
+      btx: null,
+      lastSnap: 0,
+      mo: null
+    };
+    state.btx = state.back.getContext('2d');
+
+    function snapshot(force){
+      try{
+        var now=Date.now(); if(!force && (now-state.lastSnap)<200) return;
+        var c = state.canvas; if(!c) return;
+        state.back.width  = c.width;
+        state.back.height = c.height;
+        state.btx.setTransform(1,0,0,1,0,0);
+        state.btx.clearRect(0,0,state.back.width,state.back.height);
+        state.btx.drawImage(c, 0,0);
+        state.lastSnap = now;
+      }catch(_){}
+    }
+
+    function restore(){
+      try{
+        if (state.back.width===0 || state.back.height===0) return;
+        var c = state.canvas; if(!c) return;
+        var ctx = c.getContext('2d'); if(!ctx) return;
+        var t = (ctx.getTransform && ctx.getTransform()) || null;
+        if (ctx.setTransform) ctx.setTransform(1,0,0,1,0,0);
+        // NO SCALING: draw 1:1 at top-left. If canvas shrank, excess is clipped.
+        ctx.drawImage(state.back, 0, 0);
+        if (t && ctx.setTransform) ctx.setTransform(t);
+      }catch(_){}
+    }
+
+    // Keep snapshot relatively fresh
+    state.canvas.addEventListener('pointerup', function(){ snapshot(true); }, {passive:true});
+    state.canvas.addEventListener('pointercancel', function(){ snapshot(true); }, {passive:true});
+
+    // Observe width/height mutations on the canvas and possible node replacement
+    var parent = state.canvas.parentNode || document.body;
+    state.mo = new MutationObserver(function(records){
+      var changed=false, replaced=false, newCanvas=null;
+      for (var i=0;i<records.length;i++){
+        var r=records[i];
+        if (r.type==='attributes' && r.target===state.canvas && (r.attributeName==='width' || r.attributeName==='height')){
+          changed=true;
+        }
+        if (r.type==='childList'){
+          if (r.removedNodes && r.removedNodes.length){
+            for (var j=0;j<r.removedNodes.length;j++){
+              var n=r.removedNodes[j];
+              if (n===state.canvas) { replaced=true; }
+            }
+          }
+          if (r.addedNodes && r.addedNodes.length){
+            for (var k=0;k<r.addedNodes.length;k++){
+              var a=r.addedNodes[k];
+              if (a.id==='c' || (a.querySelector && a.querySelector('#c'))){
+                newCanvas = (a.id==='c') ? a : a.querySelector('#c');
+              }
+            }
+          }
+        }
+      }
+      if (changed){
+        setTimeout(restore, 0);
+        setTimeout(restore, 120);
+        setTimeout(restore, 360);
+      }
+      if (replaced || newCanvas){
+        var c = document.getElementById('c') || newCanvas;
+        if (c && c !== state.canvas){
+          state.canvas = c;
+          installG21Overlay();
+          state.canvas.addEventListener('pointerup', function(){ snapshot(true); }, {passive:true});
+          state.canvas.addEventListener('pointercancel', function(){ snapshot(true); }, {passive:true});
+          setTimeout(restore, 0);
+          setTimeout(restore, 120);
+          setTimeout(restore, 360);
+        }
+      }
+    });
+    state.mo.observe(parent, { attributes:true, attributeFilter:['width','height'], subtree:true, childList:true });
+
+    // Initial snapshot now, and after a tick (in case engine paints late)
+    snapshot(true);
+    setTimeout(snapshot, 120);
+  }
+
+  onReady(function(){
+    ensureG21Registry();
+    installG21Overlay();
+    installPersist();
+  });
+})();
+</script>
+
 </body></html>
