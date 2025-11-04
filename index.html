@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Doodle Line — STEP_RESET_v12-51e (C9↔G19 swap) — r3c-purge — r4-thumbs-standby — r9-ui</title>
+  <title>Doodle Line</title>
   <style>
     :root{--accent:#80FF80;--fg:#000;--bg:#fff}
     html,body{margin:0;height:100%;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP",sans-serif}
@@ -46,18 +46,6 @@
 
     .microfoot{position:fixed; left:22px; right:auto; top:auto; bottom:16px; text-align:left; z-index:1001; font-size:12px; letter-spacing:.02em; color:#000; pointer-events:none;}
   </style>
-
-<style id="r17-ios-title-tweak">
-/* iPad Safari: force UI labels to black */
-#eraserBtn, #backBtn, #clearBtn, .sidebtn, .sidebtn span,
-button, input[type="button"], input[type="submit"], [role="button"], .btn, .button {
-  color:#000 !important;
-  -webkit-text-fill-color:#000;
-}
-/* Shift title pill 1px left */
-.pill { transform: translateX(-1px); }
-</style>
-
 </head>
 <body>
   <div id="wrap">
@@ -261,10 +249,16 @@ button, input[type="button"], input[type="submit"], [role="button"], .btn, .butt
     let __eraserActive=false;
     function setEraserActive(v){
   __eraserActive = !!v;
-  try {
-    const b = document.getElementById('eraserBtn');
-    if (b) b.classList.toggle('active', __eraserActive);
-  } catch(_){ /* no-op */ }
+  const b = document.getElementById('eraserBtn');
+  if (b) {
+    b.classList.toggle('active', __eraserActive);
+    // UI sync: aria + label
+    const on = __eraserActive;
+    const want = on ? 'true' : 'false';
+    if (b.getAttribute('aria-pressed') !== want) b.setAttribute('aria-pressed', want);
+    const html = on ? '<span>Doodle<br>かく</span>' : '<span>Erase<br>けす</span>';
+    if (b.innerHTML !== html) b.innerHTML = html;
+  }
 }
     function eraseSegment(a,b){
       if(!a||!b) return;
@@ -302,7 +296,7 @@ button, input[type="button"], input[type="submit"], [role="button"], .btn, .butt
   'F18': 'brush.bigDotsC9',
   'G19': 'brush.snowSquaresC9',
   'G20': 'brush.crossScatterG20',
-  'G21': 'brush.empty',
+  'G21': 'brush.ellipsesG21',
 };
     
     
@@ -1291,7 +1285,7 @@ function getThumbForSeat(seat){
   'brush.crossScatterG20': 'immediate',
   'brush.randSegG21': 'immediate',
   'brush.bigDotF18_72': 'immediate',
-  'brush.bigCircleF18_72': 'immediate'}
+  'brush.bigCircleF18_72': 'immediate', 'brush.ellipsesG21': 'immediate'}
     function modeOf(base){ return RENDER_MODE[base] || 'immediate'; }
 
     // ===== Router & stroke control =====
@@ -1310,7 +1304,32 @@ function getThumbForSeat(seat){
 
     function __flushDraw(){ __rafPending=false; if(!drawing) return; const end=pts.length-1; for(let i=__drawIndex;i<end;i++) drawSegment(pts[i], pts[i+1]); __drawIndex=end; }
 
-    function drawSegment(a,b){
+    
+    function drawEllipsesG21Segment(a,b){
+      try{
+        if(!ctx || !a || !b) return;
+        var rx=8, ry=4, spread=48, minGap=14, spacing=Math.max(1, minGap);
+        var dx=b.x-a.x, dy=b.y-a.y, dist=Math.hypot(dx,dy); if(!(dist>0)) return;
+        var steps=Math.max(1, Math.floor(dist/spacing)), ux=dx/steps, uy=dy/steps;
+        var occ=new Map(), key=function(x,y){ return (Math.floor(x/minGap))+','+(Math.floor(y/minGap)); };
+        var allow=function(x,y){ return !occ.has(key(x,y)); }, mark=function(x,y){ occ.set(key(x,y),1); };
+        var densPhase=Math.random()*Math.PI*2, phase=Math.random();
+        ctx.save(); ctx.lineWidth=1; ctx.strokeStyle='#000'; ctx.lineCap='butt'; ctx.lineJoin='miter';
+        for(var i=0;i<=steps;i++){
+          var t=(i+phase)/steps;
+          var dens=0.35+0.65*(0.5+0.5*Math.sin(t*2*Math.PI*0.9 + densPhase));
+          if(Math.random()>dens) continue;
+          var x=a.x+ux*i+(Math.random()-0.5)*spread, y=a.y+uy*i+(Math.random()-0.5)*spread;
+          if(!allow(x,y)) continue; mark(x,y);
+          ctx.beginPath();
+          if (typeof ctx.ellipse==='function'){ ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2); ctx.stroke(); }
+          else { ctx.arc(x,y,rx,0,Math.PI*2); ctx.stroke(); }
+        }
+        ctx.restore();
+      }catch(_){}
+    }
+    
+function drawSegment(a,b){
       try{
         if(!a||!b) return;
         if(__eraserActive){ eraseSegment(a,b); return; }
@@ -1376,6 +1395,8 @@ function getThumbForSeat(seat){
           case 'brush.debrisF17': if(typeof drawDebrisSegment==='function') drawDebrisSegment(a,b); else stroke(a,b); return;
           case 'brush.sprinklesF18': if(typeof sprinkleSegment==='function') sprinkleSegment(a,b); else stroke(a,b); return;
           case 'brush.snowSquaresC9': if(typeof drawSnowSquaresSegment==='function') drawSnowSquaresSegment(a,b); else stroke(a,b); return;
+          case 'brush.ellipsesG21': if(typeof drawEllipsesG21Segment==='function') drawEllipsesG21Segment(a,b); else stroke(a,b); return;
+          
           default: stroke(a,b); return;
         }
       } catch(e){ console && console.error && console.error(e); }
@@ -1676,187 +1697,14 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 
-<!-- R17: UI recover + persist(no-scale) + G21 overlay + safe runtime prune(21) -->
-<script>
-(function(){
-  if (window.__R17_INSTALLED__) return; window.__R17_INSTALLED__ = true;
-
-  function onReady(fn){
-    if (document.readyState!=='loading'){ try{ fn(); }catch(e){} }
-    else { document.addEventListener('DOMContentLoaded', function(){ try{ fn(); }catch(e){} }, {once:true}); }
-  }
-
-  // ---------- G21 overlay (coordinate-correct) ----------
-  function isG21Active(){
-    try{ if (typeof window.currentSeat === 'function') return window.currentSeat()==='G21'; }catch(_){}
-    try{
-      var btn = document.querySelector('[data-seat="G21"]');
-      if (!btn) return false;
-      if (btn.classList && (btn.classList.contains('active') || btn.classList.contains('selected'))) return true;
-      if (btn.getAttribute && (btn.getAttribute('aria-pressed')==='true' || btn.getAttribute('data-active')==='1')) return true;
-    }catch(_){}
-    return false;
-  }
-  function ensureG21Registry(){
-    try{
-      if (window.BRUSHES && !window.BRUSHES['brush.ellipsesG21']){
-        window.BRUSHES['brush.ellipsesG21'] = {
-          params: { color:'#000', width:{min:1,max:1}, spacingPx:1, ell:{ rx:8, ry:4, spread:48, minGap:14 } }
-        };
-      }
-      if (window.RENDER_MODE){ window.RENDER_MODE['brush.ellipsesG21'] = 'immediate'; }
-      if (window.seatToBrush){ window.seatToBrush['G21'] = 'brush.ellipsesG21'; }
-    }catch(_){}
-  }
-  function toCtxXY(ev, cvs, ctx){
-    var r=cvs.getBoundingClientRect();
-    var xCss = ev.clientX - r.left;
-    var yCss = ev.clientY - r.top;
-    var ratioX = cvs.width  / Math.max(1, r.width);
-    var ratioY = cvs.height / Math.max(1, r.height);
-    var xDev = xCss * ratioX, yDev = yCss * ratioY;
-    try{
-      if (ctx && typeof ctx.getTransform === 'function'){
-        var m = ctx.getTransform(), a=m.a, b=m.b, c=m.c, d=m.d, e=m.e, f=m.f;
-        var det = a*d - b*c;
-        if (det){ var ia=d/det, ib=-b/det, ic=-c/det, id=a/det, ie=(c*f-d*e)/det, iff=(b*e-a*f)/det;
-          return { x: ia*xDev + ic*yDev + ie, y: ib*xDev + id*yDev + iff };
-        }
-      }
-    }catch(_){}
-    return { x: xDev, y: yDev };
-  }
-  function drawEllipsesG21Segment(a,b, ctx){
-    try{
-      if(!ctx || !a || !b) return;
-      var rx=8, ry=4, spread=48, minGap=14, spacing=Math.max(1, minGap);
-      var dx=b.x-a.x, dy=b.y-a.y, dist=Math.hypot(dx,dy); if(!(dist>0)) return;
-      var steps=Math.max(1, Math.floor(dist/spacing)), ux=dx/steps, uy=dy/steps;
-      var occ=new Map(), key=function(x,y){ return (Math.floor(x/minGap))+','+(Math.floor(y/minGap)); };
-      var allow=function(x,y){ return !occ.has(key(x,y)); }, mark=function(x,y){ occ.set(key(x,y),1); };
-      var densPhase=Math.random()*Math.PI*2, phase=Math.random();
-      var cvs=(ctx && ctx.canvas), t = (ctx.getTransform && ctx.getTransform()) || null;
-      ctx.save(); ctx.lineWidth=1; ctx.strokeStyle='#000'; ctx.lineCap='butt'; ctx.lineJoin='miter';
-      for(var i=0;i<=steps;i++){
-        var tt=(i+phase)/steps;
-        var dens=0.35+0.65*(0.5+0.5*Math.sin(tt*2*Math.PI*0.9 + densPhase));
-        if(Math.random()>dens) continue;
-        var x=a.x+ux*i+(Math.random()-0.5)*spread, y=a.y+uy*i+(Math.random()-0.5)*spread;
-        if(!allow(x,y)) continue; mark(x,y);
-        ctx.beginPath();
-        if (typeof ctx.ellipse==='function'){ ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2); ctx.stroke(); }
-        else { ctx.arc(x,y,rx,0,Math.PI*2); ctx.stroke(); }
-      }
-      ctx.restore(); if (t && ctx.setTransform) ctx.setTransform(t);
-    }catch(_){}
-  }
-  function installG21Overlay(){
-    var cvs=document.getElementById('c'); if(!cvs || cvs.__g21OverlayInstalled) return;
-    var ctx=cvs.getContext && cvs.getContext('2d'); if(!ctx) return;
-    cvs.__g21OverlayInstalled = true;
-    var isDown=false, last=null;
-    function down(ev){ if (!isG21Active()) return; if (ev.button!==undefined && ev.button!==0) return;
-      isDown=true; last=toCtxXY(ev,cvs,ctx); ev.preventDefault(); ev.stopImmediatePropagation();
-      try{ cvs.setPointerCapture && cvs.setPointerCapture(ev.pointerId); }catch(_){}
-    }
-    function move(ev){ if (!isDown || !isG21Active()) return; var cur=toCtxXY(ev,cvs,ctx);
-      drawEllipsesG21Segment(last,cur,ctx); last=cur; ev.preventDefault(); ev.stopImmediatePropagation(); }
-    function up(ev){ if(!isDown) return; isDown=false; last=null;
-      if (isG21Active()){ ev.preventDefault(); ev.stopImmediatePropagation(); }
-      try{ cvs.releasePointerCapture && cvs.releasePointerCapture(ev.pointerId); }catch(_){}
-    }
-    cvs.addEventListener('pointerdown', down, {capture:true});
-    cvs.addEventListener('pointermove', move, {capture:true});
-    cvs.addEventListener('pointerup', up, {capture:true});
-    cvs.addEventListener('pointercancel', up, {capture:true});
-  }
-
-  // ---------- Persist across resize (no scaling) with MutationObserver ----------
-  function installPersist(){
-    var cvs=document.getElementById('c'); if(!cvs || cvs.__persistInstalled) return;
-    var ctx=cvs.getContext && cvs.getContext('2d'); if(!ctx) return;
-    cvs.__persistInstalled = true;
-    var back=document.createElement('canvas'), btx=back.getContext('2d'), lastSnap=0;
-
-    function snapshot(force){
-      try{
-        var now=Date.now(); if(!force && (now-lastSnap)<200) return;
-        back.width=cvs.width; back.height=cvs.height;
-        btx.setTransform(1,0,0,1,0,0); btx.clearRect(0,0,back.width,back.height);
-        btx.drawImage(cvs,0,0); lastSnap=now;
-      }catch(_){}
-    }
-    function restore(){
-      try{
-        if (!back.width || !back.height) return;
-        var t = (ctx.getTransform && ctx.getTransform()) || null;
-        if (ctx.setTransform) ctx.setTransform(1,0,0,1,0,0);
-        ctx.drawImage(back, 0, 0); // 1:1 non-scaling
-        if (t && ctx.setTransform) ctx.setTransform(t);
-      }catch(_){}
-    }
-    cvs.addEventListener('pointerup', function(){ snapshot(true); }, {passive:true});
-    cvs.addEventListener('pointercancel', function(){ snapshot(true); }, {passive:true});
-    try{
-      var origClear = CanvasRenderingContext2D.prototype.clearRect;
-      CanvasRenderingContext2D.prototype.clearRect = function(x,y,w,h){
-        origClear.call(this,x,y,w,h);
-        try{ if (this.canvas===cvs){ back.width=cvs.width; back.height=cvs.height; btx.setTransform(1,0,0,1,0,0); btx.clearRect(0,0,back.width,back.height); lastSnap=Date.now(); } }catch(_){}
-      };
-    }catch(_){}
-    // Observe size changes & node replacement
-    var parent = cvs.parentNode || document.body;
-    var mo = new MutationObserver(function(records){
-      var changed=false, newCanvas=null, replaced=false;
-      for (var i=0;i<records.length;i++){
-        var r=records[i];
-        if (r.type==='attributes' && r.target===cvs && (r.attributeName==='width' || r.attributeName==='height')) changed=true;
-        if (r.type==='childList'){
-          if (r.removedNodes){ for (var j=0;j<r.removedNodes.length;j++){ if (r.removedNodes[j]===cvs) replaced=true; } }
-          if (r.addedNodes){ for (var k=0;k<r.addedNodes.length;k++){ var a=r.addedNodes[k]; if (a.id==='c' || (a.querySelector && a.querySelector('#c'))){ newCanvas = (a.id==='c')?a:a.querySelector('#c'); } } }
-        }
-      }
-      if (changed){ setTimeout(restore,0); setTimeout(restore,120); setTimeout(restore,360); }
-      if (replaced || newCanvas){
-        var next=document.getElementById('c')||newCanvas;
-        if (next && next!==cvs){
-          cvs=next; ctx=cvs.getContext('2d');
-          installG21Overlay();
-          cvs.addEventListener('pointerup', function(){ snapshot(true); }, {passive:true});
-          cvs.addEventListener('pointercancel', function(){ snapshot(true); }, {passive:true});
-          setTimeout(restore,0); setTimeout(restore,120); setTimeout(restore,360);
-        }
-      }
-    });
-    mo.observe(parent, { attributes:true, attributeFilter:['width','height'], subtree:true, childList:true });
-    snapshot(true); setTimeout(snapshot,120);
-  }
-
-  // ---------- Runtime prune to 21 (safe) ----------
-  function pruneWhenReady(attempt){
-    attempt = attempt||0; if (attempt>20) return; // ~2s max
-    try{
-      var SB = window.seatToBrush, BR = window.BRUSHES, RM = window.RENDER_MODE;
-      if (!SB || !BR || !RM){ return void setTimeout(function(){ pruneWhenReady(attempt+1); }, 100); }
-      var seats = Object.keys(SB||{});
-      if (seats.length < 21){ return void setTimeout(function(){ pruneWhenReady(attempt+1); }, 100); }
-      var used = Object.create(null);
-      seats.forEach(function(s){ var id = SB[s]; if (id && typeof id==='string' && id!=='null' && id!=='empty'){ used[id]=1; } });
-      used['brush.ellipsesG21']=1;
-      Object.keys(BR).forEach(function(k){ if(!used[k]) delete BR[k]; });
-      Object.keys(RM).forEach(function(k){ if(!used[k]) delete RM[k]; });
-      console.info('[DoodleLine] pruned to', Object.keys(used).length, 'brushes (runtime safe)');
-    }catch(_){ /* swallow */ }
-  }
-
-  onReady(function(){
-    try{ ensureG21Registry(); }catch(_){}
-    try{ installG21Overlay(); }catch(_){}
-    try{ installPersist(); }catch(_){}
-    // Defer prune to ensure seatToBrush/BRUSHES準備完了後
-    setTimeout(function(){ pruneWhenReady(0); }, 100);
-  });
-})();
-</script>
+<style id="eraser-cyan-251104m">
+#eraserBtn.active,
+#eraserBtn[aria-pressed="true"]{
+  background-color:#C0FFFF !important;
+  border:1px solid #000 !important;
+  color:#000 !important;
+  -webkit-text-fill-color:#000;
+}
+</style>
 
 </body></html>
