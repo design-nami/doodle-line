@@ -1696,7 +1696,7 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 
-<style id="rootfix-eraser-cyan-251104p3">
+<style id="rootfix-eraser-cyan-251104p5">
 #eraserBtn.active,
 #eraserBtn[aria-pressed="true"]{
   background-color:#C0FFFF !important;
@@ -1706,64 +1706,29 @@ document.addEventListener('DOMContentLoaded', function(){
 }
 </style>
 
-<script id="rootfix-phase3-ssot-251104">
+<script id="rootfix-phase4-common-251104p5">
 (function(){
   function onReady(fn){
     if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn, {once:true}); }
     else { fn(); }
   }
-  // SSOT mapping & modes
-  var SSOT = {
-    seatToBrush: {
-      'A1': 'brush.basicThin',
-      'A2': 'brush.basicJitter2',
-      'A3': 'brush.dashA3',
-      'B4': 'brush.facetA3',
-      'B5': 'brush.straightE13',
-      'B6': 'brush.fillGrayB6',
-      'C7': 'brush.debrisF17',
-      'C8': 'brush.sprinklesF18',
-      'C9': 'brush.sprayBlackF16',
-      'D10': 'brush.randSegG21',
-      'D11': 'brush.flatD10',
-      'D12': 'brush.hatchD10min',
-      'E13': 'brush.bandRim',
-      'E14': 'brush.band@E14',
-      'E15': 'brush.bandCenter',
-      'F16': 'brush.redDotsC7',
-      'F17': 'brush.circlesVarC8',
-      'F18': 'brush.bigDotsC9',
-      'G19': 'brush.snowSquaresC9',
-      'G20': 'brush.crossScatterG20',
-      'G21': 'brush.ellipsesG21'
-    },
-    renderMode: { 'brush.ellipsesG21': 'immediate' }
-  };
-  if (Object.freeze){
-    try{ SSOT.seatToBrush = Object.freeze(SSOT.seatToBrush); }catch(_){}
-    try{ SSOT.renderMode = Object.freeze(SSOT.renderMode); }catch(_){}
-  }
-  window.__DL_SSOT__ = SSOT;
-
+  // Mapping for D10/G20/G21 and ellipses brush ensure
   onReady(function(){
-    // Apply SSOT maps
     if (window.seatToBrush){
-      var map = {}; for (var k in SSOT.seatToBrush){ map[k] = SSOT.seatToBrush[k]; }
-      window.seatToBrush = map;
-      if (Object.freeze){ try{ window.seatToBrush = Object.freeze(window.seatToBrush); }catch(_){ } }
+      if (!window.seatToBrush['D10']) window.seatToBrush['D10'] = 'brush.randSegG21';
+      window.seatToBrush['G20'] = 'brush.crossScatterG20';
+      if (!window.seatToBrush['G21']) window.seatToBrush['G21'] = 'brush.ellipsesG21';
     }
-    if (window.RENDER_MODE){
-      for (var m in SSOT.renderMode){ window.RENDER_MODE[m] = SSOT.renderMode[m]; }
-    }
-    // Ensure ellipses brush exists
     if (window.BRUSHES && !window.BRUSHES['brush.ellipsesG21']){
       window.BRUSHES['brush.ellipsesG21'] = {
         params: { color:'#000', width:{min:1,max:1}, spacingPx:1, ellip:{ rx:8, ry:4, spread:48, minGap:14 } }
       };
     }
+    if (window.RENDER_MODE && !window.RENDER_MODE['brush.ellipsesG21']){
+      window.RENDER_MODE['brush.ellipsesG21'] = 'immediate';
+    }
   });
-
-  // Thumbnails: data:URL only from THUMBS_SVG
+  // Thumbnails: only accept data: URLs from THUMBS_SVG or previous getter
   onReady(function(){
     var prev = window.getThumbForSeat;
     window.getThumbForSeat = function(seat){
@@ -1778,23 +1743,21 @@ document.addEventListener('DOMContentLoaded', function(){
       return null;
     };
   });
-
-  // Idempotent UI init (call once if needed)
+  // Idempotent init: build thumbs once if missing, then position side buttons.
   onReady(function(){
     var grid = document.getElementById('thumbgrid');
     if (grid && !grid.querySelector('.thumb') && typeof window.buildThumbs==='function'){
-      try{ window.buildThumbs(); }catch(_){}
+      try { window.buildThumbs(); } catch(_){}
     }
     if (typeof window.positionSideButtons==='function'){
-      try{ window.positionSideButtons(); }catch(_){}
+      try { window.positionSideButtons(); } catch(_){}
     }
   });
-
-  // Resize preserve: capture on first resize; restore after settle; NO scaling
+  // Resize preserve: debounced, no scaling, top-left anchor
   (function(){
     var snap = null;
     var timer = 0;
-    function captureSnapshot(){
+    function cap(){
       var c = document.getElementById('c');
       if(!c || !c.getContext) return null;
       var off = document.createElement('canvas');
@@ -1804,7 +1767,7 @@ document.addEventListener('DOMContentLoaded', function(){
       g.drawImage(c, 0, 0);
       return off;
     }
-    function restoreSnapshot(){
+    function restore(){
       if(!snap) return;
       var c = document.getElementById('c');
       if(!c || !c.getContext) return;
@@ -1812,31 +1775,65 @@ document.addEventListener('DOMContentLoaded', function(){
       g.save();
       g.setTransform(1,0,0,1,0,0);
       g.clearRect(0,0,c.width,c.height);
-      g.drawImage(snap, 0, 0); // 1:1, top-left anchor
+      g.drawImage(snap, 0, 0);
       g.restore();
       snap = null;
     }
     function finalize(){
       if (window.requestAnimationFrame){
-        window.requestAnimationFrame(function(){ window.requestAnimationFrame(restoreSnapshot); });
+        window.requestAnimationFrame(function(){ window.requestAnimationFrame(restore); });
       } else {
-        setTimeout(restoreSnapshot, 0);
+        setTimeout(restore, 0);
       }
     }
     function onResize(){
-      if (!snap) snap = captureSnapshot();
+      if (!snap) snap = cap();
       if (timer) clearTimeout(timer);
       timer = setTimeout(finalize, 180);
     }
     window.addEventListener('resize', onResize, false);
   })();
+})();
+</script>
 
-  // Console self-check
+<script id="rootfix-phase5-live-policy-251104">
+(function(){
+  function onReady(fn){
+    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn, {once:true}); }
+    else { fn(); }
+  }
+  function qp(name){
+    var q = window.location.search || "";
+    var m = new RegExp('[?&]'+name+'=([^&]+)').exec(q);
+    return m ? decodeURIComponent(m[1].replace(/\+/g,' ')) : null;
+  }
+  function kindOf(v){
+    var s = ''+v;
+    if (s === 'finishOnly') return 'finishOnly';
+    if (s.indexOf('live') === 0) return 'live';
+    return 'immediate';
+  }
   onReady(function(){
-    if (window.console && window.seatOrder && window.seatToBrush){
-      var missing=[], i; for(i=0;i<window.seatOrder.length;i++){ var s=window.seatOrder[i]; if(!window.seatToBrush[s]) missing.push(s); }
-      if (missing.length){ console.warn('[phase3-ssot] missing seat mapping:', missing); }
-      else { console.info('[phase3-ssot] SSOT applied'); }
+    var p = qp('live'); // 'on'|'off'|null
+    var LIVE_ALLOWED = (p === 'off') ? false : true; // default ON
+    // Normalize & apply effective modes
+    if (window.RENDER_MODE){
+      var degraded = [];
+      for (var k in RENDER_MODE){
+        if (!RENDER_MODE.hasOwnProperty(k)) continue;
+        var kind = kindOf(RENDER_MODE[k]);
+        if (kind === 'live' && !LIVE_ALLOWED){
+          RENDER_MODE[k] = 'immediate';
+          degraded.push(k);
+        }
+      }
+      window.__LIVE_POLICY__ = { allowed: LIVE_ALLOWED, degraded: degraded };
+      if (window.console && console.info){
+        console.info('[phase5] live policy = %s (use ?live=off to disable)', LIVE_ALLOWED ? 'ON' : 'OFF');
+        if (!LIVE_ALLOWED && degraded.length && console.warn){
+          console.warn('[phase5] live→immediate degrade:', degraded);
+        }
+      }
     }
   });
 })();
