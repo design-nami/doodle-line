@@ -249,14 +249,13 @@
     let __eraserActive=false;
     function setEraserActive(v){
   __eraserActive = !!v;
-  const b = document.getElementById('eraserBtn');
-  if (b) {
-    b.classList.toggle('active', __eraserActive);
-    // UI sync: aria + label
-    const on = __eraserActive;
-    const want = on ? 'true' : 'false';
+  var b = document.getElementById('eraserBtn');
+  if (b){
+    if (b.classList) b.classList.toggle('active', __eraserActive);
+    var on = __eraserActive;
+    var want = on ? 'true' : 'false';
     if (b.getAttribute('aria-pressed') !== want) b.setAttribute('aria-pressed', want);
-    const html = on ? '<span>Doodle<br>かく</span>' : '<span>Erase<br>けす</span>';
+    var html = on ? '<span>Doodle<br>かく</span>' : '<span>Erase<br>けす</span>';
     if (b.innerHTML !== html) b.innerHTML = html;
   }
 }
@@ -1697,7 +1696,7 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 
-<style id="eraser-cyan-251104m">
+<style id="rootfix-eraser-cyan-251104r5">
 #eraserBtn.active,
 #eraserBtn[aria-pressed="true"]{
   background-color:#C0FFFF !important;
@@ -1706,5 +1705,84 @@ document.addEventListener('DOMContentLoaded', function(){
   -webkit-text-fill-color:#000;
 }
 </style>
+
+<script id="rootfix-overlay-251104r5">
+(function(){
+  function onReady(fn){
+    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn); }
+    else { fn(); }
+  }
+  // Mapping for D10/G20/G21
+  onReady(function(){
+    if (window.seatToBrush){
+      if (!window.seatToBrush['D10']) window.seatToBrush['D10'] = 'brush.randSegG21';
+      window.seatToBrush['G20'] = 'brush.crossScatterG20';
+      if (!window.seatToBrush['G21']) window.seatToBrush['G21'] = 'brush.ellipsesG21';
+    }
+    if (window.BRUSHES && !window.BRUSHES['brush.ellipsesG21']){
+      window.BRUSHES['brush.ellipsesG21'] = {
+        params: { color:'#000', width:{min:1,max:1}, spacingPx:1, ellip:{ rx:8, ry:4, spread:48, minGap:14 } }
+      };
+    }
+    if (window.RENDER_MODE){ window.RENDER_MODE['brush.ellipsesG21'] = 'immediate'; }
+  });
+  // Thumbnails: data:URL only
+  onReady(function(){
+    var prev = window.getThumbForSeat;
+    window.getThumbForSeat = function(seat){
+      if (window.THUMBS_SVG && typeof window.THUMBS_SVG[seat] === 'string'){
+        var v = window.THUMBS_SVG[seat];
+        if (/^data:/.test(v)) return v;
+      }
+      if (typeof prev === 'function'){
+        var val = prev(seat);
+        if (typeof val === 'string' && /^data:/.test(val)) return val;
+      }
+      return null;
+    };
+  });
+  // Resize preserve: capture once (capture-phase), restore once after settle, NO scaling
+  (function(){
+    var snap = null;
+    var timer = 0;
+    function captureSnapshot(){
+      var c = document.getElementById('c');
+      if(!c || !c.getContext) return null;
+      var off = document.createElement('canvas');
+      off.width = c.width; off.height = c.height;
+      var g = off.getContext('2d');
+      g.setTransform(1,0,0,1,0,0);
+      g.drawImage(c, 0, 0);
+      return off;
+    }
+    function restoreSnapshot(){
+      if(!snap) return;
+      var c = document.getElementById('c');
+      if(!c || !c.getContext) return;
+      var g = c.getContext('2d');
+      g.save();
+      g.setTransform(1,0,0,1,0,0);
+      g.clearRect(0,0,c.width,c.height);
+      g.drawImage(snap, 0, 0); // 1:1, top-left
+      g.restore();
+      snap = null;
+    }
+    function finalize(){
+      if (window.requestAnimationFrame){
+        window.requestAnimationFrame(function(){ window.requestAnimationFrame(restoreSnapshot); });
+      } else {
+        setTimeout(restoreSnapshot, 0);
+      }
+    }
+    function onResizeCapture(e){
+      if (!snap) snap = captureSnapshot();
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(finalize, 180);
+    }
+    // capture-phase: run before core resize() clears canvas
+    window.addEventListener('resize', onResizeCapture, true);
+  })();
+})();
+</script>
 
 </body></html>
