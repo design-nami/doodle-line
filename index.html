@@ -39,13 +39,232 @@
     .pill{position:fixed;right:23px;top:12px;font:400 17px "Yu Gothic UI","Yu Gothic","Meiryo",sans-serif}
     .tagline{position:fixed;right:22px;top:36px;font-weight:400;letter-spacing:.04em;color:#000}
     .tagline span{display:inline-block;margin-left:1px}
-    .tagline .wig{animation:none}
+    
     body{min-height:calc(100vh + 180px);}
     
     .save-link{  position:absolute; background:none; border:0; padding:0; margin:0; font:400 14px "Yu Gothic UI","Yu Gothic","Meiryo",sans-serif; color:#000; text-decoration:underline; cursor:pointer; z-index:905; right:24px; z-index:910; top:704px; bottom:auto; }
 
     .microfoot{position:fixed; left:22px; right:auto; top:auto; bottom:16px; text-align:left; z-index:1001; font-size:12px; letter-spacing:.02em; color:#000; pointer-events:none;}
   </style>
+
+<style id="eraser-cyan-251105n">
+#eraserBtn.active,
+#eraserBtn[aria-pressed="true"]{
+  background-color:#C0FFFF !important;
+  border:1px solid #000 !important;
+  color:#000 !important;
+  -webkit-text-fill-color:#000;
+}
+/* Save-link fixed placement (定位置) */
+.save-link{ position:fixed !important; right:22px !important; top:712px !important; bottom:auto !important; z-index:1002 !important; }
+
+/* Tagline CSS variables */
+:root{
+  --tg1:16px; --tg2:16px; --tg3:16px; --tg4:16px; --tg5:16px; --tg6:16px; --tg7:16px;
+}
+#tagline span.t1{ font-size: var(--tg1); }
+#tagline span.t2{ font-size: var(--tg2); }
+#tagline span.t3{ font-size: var(--tg3); }
+#tagline span.t4{ font-size: var(--tg4); }
+#tagline span.t5{ font-size: var(--tg5); }
+#tagline span.t6{ font-size: var(--tg6); }
+#tagline span.t7{ font-size: var(--tg7); }
+</style>
+
+
+<style id="save-link-fixed-251105o">
+/* Fix: keep the download link at a stable bottom-right position regardless of layout scripts */
+#saveLink.save-link{
+  position: fixed !important;
+  right: 24px !important;
+  bottom: 22px !important;
+  top: auto !important;
+  left: auto !important;
+  z-index: 999 !important;
+  pointer-events: auto !important;
+}
+</style>
+
+
+
+<style id="save-under-grid-251105q">
+#thumbgrid .save-link-row{ text-align: right; margin-top: 10px; }
+#thumbgrid .save-link-row a#saveLink.save-link{
+  position: static !important;
+  inset: auto !important;
+  right: auto !important; left: auto !important; top: auto !important; bottom: auto !important;
+  display: inline-block;
+  margin: 0; padding: 0;
+  background: transparent !important;
+  border: none !important;
+  width: auto !important;
+  box-shadow: none !important;
+}
+</style>
+
+
+<style id="thumbs-visible-enforce-251108f">
+  #thumbbar{ display:block !important; visibility:visible !important; opacity:1 !important; }
+  #thumbgrid{ display:grid !important; visibility:visible !important; opacity:1 !important; }
+  #thumbgrid .thumb{ display:block !important; visibility:visible !important; }
+</style>
+
+
+<script id="thumbs-ensure-251108f">
+(function(){
+  'use strict';
+  function ensureThumbs(){
+    try{
+      var tb = document.getElementById('thumbbar');
+      var grid = document.getElementById('thumbgrid');
+      if(tb){ tb.style.display='block'; tb.style.visibility='visible'; tb.style.opacity='1'; }
+      if(grid){ grid.style.display='grid'; grid.style.visibility='visible'; grid.style.opacity='1'; }
+
+      var need = (window.seatOrder && window.seatOrder.length) || 21;
+
+      function fallbackBuild(){
+        if(!grid) return;
+        var so = (window.seatOrder && window.seatOrder.slice()) || ["A1","A2","A3","B4","B5","B6","C7","C8","C9","D10","D11","D12","E13","E14","E15","F16","F17","F18","G19","G20","G21"];
+        grid.innerHTML='';
+        for(var i=0;i<so.length;i++){
+          var seat=so[i];
+          var btn=document.createElement('button');
+          btn.className='thumb'; btn.type='button';
+          btn.dataset.seat=seat; btn.dataset.index=String(i);
+          var src=(window.THUMBS_SVG && window.THUMBS_SVG[seat])||'';
+          if(src){ btn.style.backgroundImage='url('+src+')'; }
+          (function(index){ 
+            btn.addEventListener('pointerdown', function(ev){ if(ev) ev.preventDefault(); if(window.setActiveSeat) window.setActiveSeat(index); }, {passive:false});
+            btn.addEventListener('click', function(ev){ if(ev) ev.preventDefault(); if(window.setActiveSeat) window.setActiveSeat(index); }, {passive:false});
+          })(i);
+          grid.appendChild(btn);
+        }
+        if(window.setActiveSeat) try{ window.setActiveSeat(0); }catch(_){}
+      }
+
+      function build(){
+        if(typeof window.buildThumbs === 'function'){ window.buildThumbs(); }
+        else { fallbackBuild(); }
+      }
+
+      if(grid && (!grid.children || grid.children.length < need)){
+        build();
+      }
+
+      // Short retries to withstand late script loads
+      var tries=0;
+      (function retry(){
+        tries++;
+        if(!grid){ return; }
+        var needNow = (window.seatOrder && window.seatOrder.length) || 21;
+        if(grid.children && grid.children.length >= needNow){ return; }
+        build();
+        if(tries<12) setTimeout(retry, 40);
+      })();
+    }catch(e){ /* silent */ }
+  }
+
+  if(document.readyState!=='loading') ensureThumbs();
+  else document.addEventListener('DOMContentLoaded', ensureThumbs, {once:true});
+})();
+</script>
+
+
+<style id="save-link-fixed-clean-251108m">
+#saveLink.save-link, .save-link {
+  position: fixed !important;
+  right: 24px !important;
+  bottom: 22px !important;
+  top: auto !important;
+  left: auto !important;
+}
+</style>
+
+
+<script id="OnceGuard-251108m">
+(function(){
+  try{
+    if(window.__ONCE_GUARD_INSTALLED__) return;
+    window.__ONCE_GUARD_INSTALLED__ = true;
+    var seen = new WeakSet();
+    var orig = window.addEventListener;
+    window.addEventListener = function(type, listener, opts){
+      if(type==='resize' && typeof listener==='function'){
+        if(seen.has(listener)) return;
+        seen.add(listener);
+      }
+      return orig.call(this, type, listener, opts);
+    };
+  }catch(e){}
+})();
+</script>
+
+
+<style id="thumbs-visible-enforce-251108m">
+#thumbbar{ display:block !important; visibility:visible !important; opacity:1 !important; }
+#thumbgrid{ display:grid !important; visibility:visible !important; opacity:1 !important; }
+#thumbgrid .thumb{ display:block !important; visibility:visible !important; }
+</style>
+
+
+<script id="thumbs-ensure-251108m">
+(function(){
+  'use strict';
+  function ensureThumbs(){
+    try{
+      var tb=document.getElementById('thumbbar');
+      var grid=document.getElementById('thumbgrid');
+      if(tb){ tb.style.display='block'; tb.style.visibility='visible'; tb.style.opacity='1'; }
+      if(grid){ grid.style.display='grid'; grid.style.visibility='visible'; grid.style.opacity='1'; }
+
+      var need = (window.seatOrder && window.seatOrder.length) || 21;
+
+      function fallbackBuild(){
+        if(!grid) return;
+        var so=(window.seatOrder && window.seatOrder.slice())||["A1","A2","A3","B4","B5","B6","C7","C8","C9","D10","D11","D12","E13","E14","E15","F16","F17","F18","G19","G20","G21"];
+        grid.innerHTML='';
+        for(var i=0;i<so.length;i++){
+          var seat=so[i];
+          var btn=document.createElement('button');
+          btn.className='thumb'; btn.type='button';
+          btn.dataset.seat=seat; btn.dataset.index=String(i);
+          var src=(window.THUMBS_SVG && window.THUMBS_SVG[seat])||'';
+          if(src){ btn.style.backgroundImage='url('+src+')'; }
+          (function(index){
+            btn.addEventListener('pointerdown', function(ev){ if(ev) ev.preventDefault(); if(window.setActiveSeat) window.setActiveSeat(index); }, {passive:false});
+            btn.addEventListener('click', function(ev){ if(ev) ev.preventDefault(); if(window.setActiveSeat) window.setActiveSeat(index); }, {passive:false});
+          })(i);
+          grid.appendChild(btn);
+        }
+        if(window.setActiveSeat) try{ window.setActiveSeat(0); }catch(_){}
+      }
+
+      function build(){
+        if(typeof window.buildThumbs === 'function'){ window.buildThumbs(); }
+        else { fallbackBuild(); }
+      }
+
+      if(grid && (!grid.children || grid.children.length < need)){
+        build();
+      }
+
+      var tries=0;
+      (function retry(){
+        tries++;
+        if(!grid) return;
+        var needNow=(window.seatOrder && window.seatOrder.length) || 21;
+        if(grid.children && grid.children.length >= needNow){ return; }
+        build();
+        if(tries<12) setTimeout(retry, 40);
+      })();
+    }catch(e){}
+  }
+  if(document.readyState!=='loading') ensureThumbs();
+  else document.addEventListener('DOMContentLoaded', ensureThumbs, {once:true});
+})();
+</script>
+
+
 </head>
 <body>
   <div id="wrap">
@@ -62,7 +281,7 @@
     <button id="saveLink" class="save-link" type="button" aria-label="らくがきをダウンロード">らくがきをダウンロード</button>
 
     <div class="pill" aria-hidden="true">Doodle Line</div>
-    <div class="tagline" id="tagline" aria-label="かいてあそぼう"><span>か</span><span>い</span><span>て</span><span class="wig">あ</span><span>そ</span><span>ぼ</span><span>う</span></div>
+    <div class="tagline" id="tagline" aria-label="かいてあそぼう"><span>か</span><span>い</span><span>て</span><span >あ</span><span>そ</span><span>ぼ</span><span>う</span></div>
     <div class="toprule" aria-hidden="true"></div>
   </div>
   <footer class="microfoot" id="microfoot">© Doodle Line — Code as Touch prototype by nami</footer>
@@ -248,15 +467,15 @@
     // 消しゴム
     let __eraserActive=false;
     function setEraserActive(v){
-  __eraserActive = !!v;
+  try { __eraserActive = !!v; } catch(e){ window.__eraserActive = !!v; }
   var b = document.getElementById('eraserBtn');
   if (b){
     if (b.classList) b.classList.toggle('active', __eraserActive);
     var on = __eraserActive;
     var want = on ? 'true' : 'false';
     if (b.getAttribute('aria-pressed') !== want) b.setAttribute('aria-pressed', want);
-    var html = on ? '<span>Doodle<br>かく</span>' : '<span>Erase<br>けす</span>';
-    if (b.innerHTML !== html) b.innerHTML = html;
+    var htmlLbl = on ? '<span>Doodle<br>かく</span>' : '<span>Erase<br>けす</span>';
+    if (b.innerHTML !== htmlLbl) b.innerHTML = htmlLbl;
   }
 }
     function eraseSegment(a,b){
@@ -1696,147 +1915,210 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 
-<style id="rootfix-eraser-cyan-251104p5">
-#eraserBtn.active,
-#eraserBtn[aria-pressed="true"]{
-  background-color:#C0FFFF !important;
-  border:1px solid #000 !important;
-  color:#000 !important;
-  -webkit-text-fill-color:#000;
-}
-</style>
-
-<script id="rootfix-phase4-common-251104p5">
+<script id="tagline-controller-251105n">
 (function(){
-  function onReady(fn){
-    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn, {once:true}); }
-    else { fn(); }
+  'use strict';
+  function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn, {once:true}); } else { fn(); } }
+  function randInt(min,max){ return Math.floor(min + Math.random()*(max-min+1)); }
+  function updateTaglineSizes(reason){
+    var tg=document.getElementById('tagline'); if(!tg) return;
+    var spans=tg.querySelectorAll('span'); var i,n=Math.min(7,spans.length);
+    for(i=0;i<n;i++){ var cls='t'+(i+1); if(!spans[i].classList.contains(cls)) spans[i].classList.add(cls); }
+    var root=document.documentElement;
+    for(i=1;i<=n;i++){ var px=randInt(12,18); root.style.setProperty('--tg'+i, px+'px'); }
+    if (location.search.indexOf('tagdebug=1')>=0 && window.console){
+      var sizes=[]; for(i=1;i<=n;i++){ sizes.push(getComputedStyle(spans[i-1]).fontSize); }
+      console.info('[tagline] %s -> %o', reason||'update', sizes);
+    }
   }
-  // Mapping for D10/G20/G21 and ellipses brush ensure
   onReady(function(){
-    if (window.seatToBrush){
-      if (!window.seatToBrush['D10']) window.seatToBrush['D10'] = 'brush.randSegG21';
-      window.seatToBrush['G20'] = 'brush.crossScatterG20';
-      if (!window.seatToBrush['G21']) window.seatToBrush['G21'] = 'brush.ellipsesG21';
+    updateTaglineSizes('init');
+    var c=document.getElementById('c');
+    if(c){
+      c.addEventListener('pointerup', function(){ updateTaglineSizes('stroke'); }, false);
+      c.addEventListener('mouseup', function(){ updateTaglineSizes('stroke'); }, false);
+      c.addEventListener('touchend', function(){ updateTaglineSizes('stroke'); }, false);
     }
-    if (window.BRUSHES && !window.BRUSHES['brush.ellipsesG21']){
-      window.BRUSHES['brush.ellipsesG21'] = {
-        params: { color:'#000', width:{min:1,max:1}, spacingPx:1, ellip:{ rx:8, ry:4, spread:48, minGap:14 } }
-      };
+    var grid=document.getElementById('thumbgrid');
+    if(grid){
+      grid.addEventListener('click', function(e){
+        var t=e.target, hit=false;
+        if (t && t.classList && t.classList.contains('thumb')) hit=true;
+        else if (t && t.closest && t.closest('.thumb')) hit=true;
+        if (hit){ try{ setEraserActive(false); }catch(_){ window.__eraserActive=false; } updateTaglineSizes('seat'); }
+      }, false);
     }
-    if (window.RENDER_MODE && !window.RENDER_MODE['brush.ellipsesG21']){
-      window.RENDER_MODE['brush.ellipsesG21'] = 'immediate';
-    }
+    var eb=document.getElementById('eraserBtn');
+    if(eb){ eb.addEventListener('click', function(){ setTimeout(function(){ updateTaglineSizes('eraser'); },0); }, false); }
+    var cb=document.getElementById('clearBtn');
+    if(cb){ cb.addEventListener('click', function(){ updateTaglineSizes('clear'); }, false); }
+    var sb=document.getElementById('saveBtn')||document.getElementById('saveLink');
+    if(sb){ sb.addEventListener('click', function(){ updateTaglineSizes('save'); }, false); }
   });
-  // Thumbnails: only accept data: URLs from THUMBS_SVG or previous getter
+})();
+</script>
+
+<script id="resize-preserve-251105n">
+(function(){
+  var snap=null, timer=0;
+  function canvas(){ return document.getElementById('c'); }
+  function cap(){ var c=canvas(); if(!c||!c.getContext) return null; var off=document.createElement('canvas'); off.width=c.width; off.height=c.height; var g=off.getContext('2d'); g.setTransform(1,0,0,1,0,0); g.drawImage(c,0,0); return off; }
+  function qp(name){ var q=window.location.search||''; var m=new RegExp('[?&]'+name+'=([^&]+)').exec(q); return m?decodeURIComponent(m[1].replace(/\+/g,' ')):null; }
+  function restore(){ if(!snap) return; var c=canvas(); if(!c||!c.getContext) return; var g=c.getContext('2d'); g.save(); g.setTransform(1,0,0,1,0,0); var ax=0, ay=0; if(qp('anchor')==='center'){ ax=Math.round((c.width-snap.width)/2); ay=Math.round((c.height-snap.height)/2); } g.clearRect(0,0,c.width,c.height); g.drawImage(snap,ax,ay); g.restore(); snap=null; }
+  function fin(){ if(window.requestAnimationFrame){ requestAnimationFrame(function(){ requestAnimationFrame(restore); }); } else { setTimeout(restore,0); } }
+  function onResize(){ if(!snap) snap=cap(); if(timer) clearTimeout(timer); timer=setTimeout(fin,180); }
+  window.addEventListener('resize', onResize, false);
+})();
+</script>
+
+<script id="rootfix-seat-brush-mode-251105n">
+(function(){
+  function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn, {once:true}); } else { fn(); } }
+  function baseOf(id){ if(!id) return id; var s=String(id); var i=s.indexOf('@'); return (i>=0)?s.slice(0,i):s; }
   onReady(function(){
-    var prev = window.getThumbForSeat;
-    window.getThumbForSeat = function(seat){
-      if (window.THUMBS_SVG && typeof window.THUMBS_SVG[seat] === 'string'){
-        var v = window.THUMBS_SVG[seat];
-        if (/^data:/.test(v)) return v;
+    try{
+      // Registry unification
+      var REG = (typeof BRUSHES!=='undefined' && BRUSHES) ? BRUSHES : (window.BRUSHES || (window.BRUSHES = {}));
+      var MOD = (typeof RENDER_MODE!=='undefined' && RENDER_MODE) ? RENDER_MODE : (window.RENDER_MODE || (window.RENDER_MODE = {}));
+
+      // Ensure known brushes
+      if (!REG['brush.ellipsesG21']) REG['brush.ellipsesG21']={ params:{ color:'#000', width:{min:1,max:1}, spacingPx:1, ellip:{ rx:8, ry:4, spread:48, minGap:14 } } };
+      if (!REG['brush.hatchD10min']) REG['brush.hatchD10min']={ params:{ color:'#000', width:{min:1,max:1}, spacingPx:1, hatch:{ gap:6, jitter:0.6 } } };
+
+      // Normalize modes
+      MOD['brush.fillGrayB6']='finishOnly';
+      MOD['brush.hatchD10min']='immediate';
+      for (var k in MOD){ if(!MOD.hasOwnProperty(k)) continue; var v=MOD[k]; if (typeof v==='string' && v.indexOf('data:')===0){ MOD[k]='immediate'; } }
+
+      // Supplement by existing maps
+      var map=(typeof seatToBrush!=='undefined')?seatToBrush:((typeof FIXED_SEAT_TO_BRUSH!=='undefined')?FIXED_SEAT_TO_BRUSH:null);
+      var added=[]; if (map){ for (var s in map){ if(!map.hasOwnProperty(s)) continue; var b=baseOf(map[s]); if(b && !MOD[b]){ MOD[b]='immediate'; added.push(b);} } }
+      if (window.console&&console.info) console.info('[modes-supplement] ensured modes for', added);
+
+      // Critical seats
+      if (typeof seatToBrush==='undefined') window.seatToBrush={};
+      seatToBrush['D10']='brush.randSegG21'; seatToBrush['D12']='brush.hatchD10min'; seatToBrush['G20']='brush.crossScatterG20'; seatToBrush['G21']='brush.ellipsesG21';
+      if (typeof FIXED_SEAT_TO_BRUSH==='undefined') window.FIXED_SEAT_TO_BRUSH={};
+      for (var s2 in seatToBrush){ if(seatToBrush.hasOwnProperty(s2)) FIXED_SEAT_TO_BRUSH[s2]=seatToBrush[s2]; }
+      if (window.console&&console.info) console.info('[rootfix] seats & modes normalized (D10/D12/G20/G21)');
+
+      // Post-supplement after sync
+      var bases={}, s3; for (s3 in seatToBrush){ if(seatToBrush.hasOwnProperty(s3)) bases[baseOf(seatToBrush[s3])] = 1; }
+      var addedModes2=[], addedBrushes2=[];
+      for (var b in bases){ if(!bases.hasOwnProperty(b)) continue; if(!MOD[b]){ MOD[b]='immediate'; addedModes2.push(b);} if(!REG[b]){ REG[b]={ params:{ color:'#000', width:{min:1,max:1}, spacingPx:1 } }; addedBrushes2.push(b);} }
+      if (window.console&&console.info) console.info('[post-supplement] added modes for', addedModes2);
+      if (window.console&&console.info) console.info('[post-supplement] ensured brushes for', addedBrushes2);
+
+      // Self-check
+      var missing=[], missingMode=[];
+      for (var s4 in seatToBrush){
+        if(!seatToBrush.hasOwnProperty(s4)) continue; var bb=baseOf(seatToBrush[s4]);
+        if (!(REG && REG[bb])) missing.push(bb);
+        if (!(MOD && MOD[bb])) missingMode.push(bb);
       }
-      if (typeof prev === 'function'){
-        var val = prev(seat);
-        if (typeof val === 'string' && /^data:/.test(val)) return val;
+      if (window.console){
+        if (missing.length) console.warn('[rootfix] missing BRUSHES:', Array.from(new Set(missing)));
+        if (missingMode.length) console.warn('[rootfix] missing RENDER_MODE:', Array.from(new Set(missingMode)));
       }
-      return null;
-    };
+
+      // Save-link: enforce fixed placement (CSSだけで十分だが念のため)
+      var el = document.getElementById('saveLink') || document.querySelector('.save-link');
+      if(el){ el.style.position='fixed'; el.style.right='22px'; el.style.top='712px'; el.style.bottom='auto'; el.style.zIndex='1002'; }
+
+    }catch(e){ if(window.console&&console.warn) console.warn('[rootfix] failed', e); }
   });
-  // Idempotent init: build thumbs once if missing, then position side buttons.
+})();
+</script>
+
+
+
+<script id="save-move-under-G-251105q">
+(function(){
+  function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn, {once:true}); } else { fn(); } }
   onReady(function(){
     var grid = document.getElementById('thumbgrid');
-    if (grid && !grid.querySelector('.thumb') && typeof window.buildThumbs==='function'){
-      try { window.buildThumbs(); } catch(_){}
-    }
-    if (typeof window.positionSideButtons==='function'){
-      try { window.positionSideButtons(); } catch(_){}
-    }
+    if (!grid) return;
+    var link = document.getElementById('saveLink') || document.getElementById('saveBtn');
+    if (!link) return;
+    var row = document.createElement('div');
+    row.className = 'save-link-row';
+    row.appendChild(link);
+    grid.appendChild(row);
   });
-  // Resize preserve: debounced, no scaling, top-left anchor
+})();
+</script>
+
+
+<script id="detailup_251108j">
+(function(){
+  'use strict';
+  // D1: crisp 1px snaps
+  try{
+    var P = CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+    if(P && !P.__d1_snapping__){
+      var _mv = P.moveTo, _ln = P.lineTo;
+      function snap(v){ return Math.round(v) + 0.5; }
+      function shouldSnap(ctx){ try{ var w=ctx.lineWidth||1; return w<=1.5; }catch(e){ return false; } }
+      P.moveTo = function(x,y){ if(shouldSnap(this)){ x=snap(x); y=snap(y);} return _mv.call(this,x,y); };
+      P.lineTo = function(x,y){ if(shouldSnap(this)){ x=snap(x); y=snap(y);} return _ln.call(this,x,y); };
+      P.__d1_snapping__ = true;
+    }
+  }catch(_){}
+  // helper
+  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn, {once:true}); }
+  // D2: input feel
   (function(){
-    var snap = null;
-    var timer = 0;
-    function cap(){
-      var c = document.getElementById('c');
-      if(!c || !c.getContext) return null;
-      var off = document.createElement('canvas');
-      off.width = c.width; off.height = c.height;
-      var g = off.getContext('2d');
-      g.setTransform(1,0,0,1,0,0);
-      g.drawImage(c, 0, 0);
-      return off;
-    }
-    function restore(){
-      if(!snap) return;
-      var c = document.getElementById('c');
-      if(!c || !c.getContext) return;
-      var g = c.getContext('2d');
-      g.save();
-      g.setTransform(1,0,0,1,0,0);
-      g.clearRect(0,0,c.width,c.height);
-      g.drawImage(snap, 0, 0);
-      g.restore();
-      snap = null;
-    }
-    function finalize(){
-      if (window.requestAnimationFrame){
-        window.requestAnimationFrame(function(){ window.requestAnimationFrame(restore); });
-      } else {
-        setTimeout(restore, 0);
+    var DEAD = 3;
+    var starts = new Map();
+    function onPD(ev){ if(!(ev && ev.target && ev.target.id==='c')) return; starts.set(ev.pointerId,{x:ev.clientX,y:ev.clientY,pass:false}); }
+    function onPM(ev){ if(!(ev && ev.target && ev.target.id==='c')) return;
+      var st = starts.get(ev.pointerId); if(!st) return; if(st.pass) return;
+      var dx=ev.clientX-st.x, dy=ev.clientY-st.y;
+      if((dx*dx+dy*dy) < DEAD*DEAD){ ev.stopImmediatePropagation(); ev.preventDefault(); }
+      else { st.pass = true; } }
+    function flushOverlay(){ try{ var ov=document.getElementById('ov'); if(!ov) return; var g=ov.getContext('2d'); if(!g) return; g.save(); g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,ov.width,ov.height); g.restore(); }catch(_){ } }
+    function synthUP(){ try{ var c=document.getElementById('c'); if(!c) return; var e=new PointerEvent('pointerup',{bubbles:true,cancelable:true,pointerId:1}); c.dispatchEvent(e); }catch(_){ } }
+    function onPU(ev){ flushOverlay(); if(ev) starts.delete(ev.pointerId); }
+    function onCancelLike(){ synthUP(); flushOverlay(); }
+    ready(function(){
+      var c=document.getElementById('c'); if(!c) return;
+      c.addEventListener('pointerdown', onPD, true);
+      c.addEventListener('pointermove', onPM, true);
+      c.addEventListener('pointerup',   onPU, true);
+      c.addEventListener('pointerleave', onPU, true);
+      c.addEventListener('pointercancel', function(){ onCancelLike(); }, true);
+      document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') onCancelLike(); }, {passive:true});
+      window.addEventListener('blur', onCancelLike, {passive:true});
+    });
+  })();
+  // D3: save naming collision-safe
+  (function(){
+    ready(function(){
+      var a=document.getElementById('saveLink'); if(!a) return;
+      function pad(n){ return ('0'+n).slice(-2); }
+      function onSave(ev){
+        try{
+          ev.preventDefault(); ev.stopImmediatePropagation();
+          var cvs=document.getElementById('c'); if(!cvs) return;
+          var out=document.createElement('canvas'); out.width=cvs.width; out.height=cvs.height;
+          var g=out.getContext('2d'); g.setTransform(1,0,0,1,0,0);
+          g.fillStyle='#fff'; g.fillRect(0,0,out.width,out.height); g.drawImage(cvs,0,0);
+          var url=out.toDataURL('image/png');
+          var now=new Date();
+          var ts=now.getFullYear().toString()+pad(now.getMonth()+1)+pad(now.getDate())+'_'+pad(now.getHours())+pad(now.getMinutes())+pad(now.getSeconds());
+          var dpr=Math.max(1,window.devicePixelRatio||1), w=Math.round(out.width/dpr), h=Math.round(out.height/dpr);
+          if(!window.__SAVE_SEQ) window.__SAVE_SEQ={}; var idx=window.__SAVE_SEQ[ts]|0; window.__SAVE_SEQ[ts]=idx+1;
+          var suffix = idx? ('_'+String.fromCharCode(96+idx+1)) : '';
+          var fname='doodle-line_'+ts+'_w'+w+'_h'+h+suffix+'.png';
+          var link=document.createElement('a'); link.download=fname; link.href=url; document.body.appendChild(link); link.click();
+          setTimeout(function(){ try{ document.body.removeChild(link);}catch(_){ } }, 120);
+        }catch(_){}
       }
-    }
-    function onResize(){
-      if (!snap) snap = cap();
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(finalize, 180);
-    }
-    window.addEventListener('resize', onResize, false);
+      a.addEventListener('click', onSave, true);
+    });
   })();
 })();
 </script>
 
-<script id="rootfix-phase5-live-policy-251104">
-(function(){
-  function onReady(fn){
-    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn, {once:true}); }
-    else { fn(); }
-  }
-  function qp(name){
-    var q = window.location.search || "";
-    var m = new RegExp('[?&]'+name+'=([^&]+)').exec(q);
-    return m ? decodeURIComponent(m[1].replace(/\+/g,' ')) : null;
-  }
-  function kindOf(v){
-    var s = ''+v;
-    if (s === 'finishOnly') return 'finishOnly';
-    if (s.indexOf('live') === 0) return 'live';
-    return 'immediate';
-  }
-  onReady(function(){
-    var p = qp('live'); // 'on'|'off'|null
-    var LIVE_ALLOWED = (p === 'off') ? false : true; // default ON
-    // Normalize & apply effective modes
-    if (window.RENDER_MODE){
-      var degraded = [];
-      for (var k in RENDER_MODE){
-        if (!RENDER_MODE.hasOwnProperty(k)) continue;
-        var kind = kindOf(RENDER_MODE[k]);
-        if (kind === 'live' && !LIVE_ALLOWED){
-          RENDER_MODE[k] = 'immediate';
-          degraded.push(k);
-        }
-      }
-      window.__LIVE_POLICY__ = { allowed: LIVE_ALLOWED, degraded: degraded };
-      if (window.console && console.info){
-        console.info('[phase5] live policy = %s (use ?live=off to disable)', LIVE_ALLOWED ? 'ON' : 'OFF');
-        if (!LIVE_ALLOWED && degraded.length && console.warn){
-          console.warn('[phase5] live→immediate degrade:', degraded);
-        }
-      }
-    }
-  });
-})();
-</script>
 
 </body></html>
