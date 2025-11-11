@@ -71,7 +71,6 @@
 #tagline span.t7{ font-size: var(--tg7); }
 </style>
 
-
 <style id="save-link-fixed-251105o">
 /* Fix: keep the download link at a stable bottom-right position regardless of layout scripts */
 #saveLink.save-link{
@@ -84,8 +83,6 @@
   pointer-events: auto !important;
 }
 </style>
-
-
 
 <style id="save-under-grid-251105q">
 #thumbgrid .save-link-row{ text-align: right; margin-top: 10px; }
@@ -102,168 +99,9 @@
 }
 </style>
 
-
-<style id="thumbs-visible-enforce-251108f">
-  #thumbbar{ display:block !important; visibility:visible !important; opacity:1 !important; }
-  #thumbgrid{ display:grid !important; visibility:visible !important; opacity:1 !important; }
-  #thumbgrid .thumb{ display:block !important; visibility:visible !important; }
+<style id="tagline-offset-251108ad">
+  #tagline { transform: translateY(2px); will-change: transform; }
 </style>
-
-
-<script id="thumbs-ensure-251108f">
-(function(){
-  'use strict';
-  function ensureThumbs(){
-    try{
-      var tb = document.getElementById('thumbbar');
-      var grid = document.getElementById('thumbgrid');
-      if(tb){ tb.style.display='block'; tb.style.visibility='visible'; tb.style.opacity='1'; }
-      if(grid){ grid.style.display='grid'; grid.style.visibility='visible'; grid.style.opacity='1'; }
-
-      var need = (window.seatOrder && window.seatOrder.length) || 21;
-
-      function fallbackBuild(){
-        if(!grid) return;
-        var so = (window.seatOrder && window.seatOrder.slice()) || ["A1","A2","A3","B4","B5","B6","C7","C8","C9","D10","D11","D12","E13","E14","E15","F16","F17","F18","G19","G20","G21"];
-        grid.innerHTML='';
-        for(var i=0;i<so.length;i++){
-          var seat=so[i];
-          var btn=document.createElement('button');
-          btn.className='thumb'; btn.type='button';
-          btn.dataset.seat=seat; btn.dataset.index=String(i);
-          var src=(window.THUMBS_SVG && window.THUMBS_SVG[seat])||'';
-          if(src){ btn.style.backgroundImage='url('+src+')'; }
-          (function(index){ 
-            btn.addEventListener('pointerdown', function(ev){ if(ev) ev.preventDefault(); if(window.setActiveSeat) window.setActiveSeat(index); }, {passive:false});
-            btn.addEventListener('click', function(ev){ if(ev) ev.preventDefault(); if(window.setActiveSeat) window.setActiveSeat(index); }, {passive:false});
-          })(i);
-          grid.appendChild(btn);
-        }
-        if(window.setActiveSeat) try{ window.setActiveSeat(0); }catch(_){}
-      }
-
-      function build(){
-        if(typeof window.buildThumbs === 'function'){ window.buildThumbs(); }
-        else { fallbackBuild(); }
-      }
-
-      if(grid && (!grid.children || grid.children.length < need)){
-        build();
-      }
-
-      // Short retries to withstand late script loads
-      var tries=0;
-      (function retry(){
-        tries++;
-        if(!grid){ return; }
-        var needNow = (window.seatOrder && window.seatOrder.length) || 21;
-        if(grid.children && grid.children.length >= needNow){ return; }
-        build();
-        if(tries<12) setTimeout(retry, 40);
-      })();
-    }catch(e){ /* silent */ }
-  }
-
-  if(document.readyState!=='loading') ensureThumbs();
-  else document.addEventListener('DOMContentLoaded', ensureThumbs, {once:true});
-})();
-</script>
-
-
-<style id="save-link-fixed-clean-251108m">
-#saveLink.save-link, .save-link {
-  position: fixed !important;
-  right: 24px !important;
-  bottom: 22px !important;
-  top: auto !important;
-  left: auto !important;
-}
-</style>
-
-
-<script id="OnceGuard-251108m">
-(function(){
-  try{
-    if(window.__ONCE_GUARD_INSTALLED__) return;
-    window.__ONCE_GUARD_INSTALLED__ = true;
-    var seen = new WeakSet();
-    var orig = window.addEventListener;
-    window.addEventListener = function(type, listener, opts){
-      if(type==='resize' && typeof listener==='function'){
-        if(seen.has(listener)) return;
-        seen.add(listener);
-      }
-      return orig.call(this, type, listener, opts);
-    };
-  }catch(e){}
-})();
-</script>
-
-
-<style id="thumbs-visible-enforce-251108m">
-#thumbbar{ display:block !important; visibility:visible !important; opacity:1 !important; }
-#thumbgrid{ display:grid !important; visibility:visible !important; opacity:1 !important; }
-#thumbgrid .thumb{ display:block !important; visibility:visible !important; }
-</style>
-
-
-<script id="thumbs-ensure-251108m">
-(function(){
-  'use strict';
-  function ensureThumbs(){
-    try{
-      var tb=document.getElementById('thumbbar');
-      var grid=document.getElementById('thumbgrid');
-      if(tb){ tb.style.display='block'; tb.style.visibility='visible'; tb.style.opacity='1'; }
-      if(grid){ grid.style.display='grid'; grid.style.visibility='visible'; grid.style.opacity='1'; }
-
-      var need = (window.seatOrder && window.seatOrder.length) || 21;
-
-      function fallbackBuild(){
-        if(!grid) return;
-        var so=(window.seatOrder && window.seatOrder.slice())||["A1","A2","A3","B4","B5","B6","C7","C8","C9","D10","D11","D12","E13","E14","E15","F16","F17","F18","G19","G20","G21"];
-        grid.innerHTML='';
-        for(var i=0;i<so.length;i++){
-          var seat=so[i];
-          var btn=document.createElement('button');
-          btn.className='thumb'; btn.type='button';
-          btn.dataset.seat=seat; btn.dataset.index=String(i);
-          var src=(window.THUMBS_SVG && window.THUMBS_SVG[seat])||'';
-          if(src){ btn.style.backgroundImage='url('+src+')'; }
-          (function(index){
-            btn.addEventListener('pointerdown', function(ev){ if(ev) ev.preventDefault(); if(window.setActiveSeat) window.setActiveSeat(index); }, {passive:false});
-            btn.addEventListener('click', function(ev){ if(ev) ev.preventDefault(); if(window.setActiveSeat) window.setActiveSeat(index); }, {passive:false});
-          })(i);
-          grid.appendChild(btn);
-        }
-        if(window.setActiveSeat) try{ window.setActiveSeat(0); }catch(_){}
-      }
-
-      function build(){
-        if(typeof window.buildThumbs === 'function'){ window.buildThumbs(); }
-        else { fallbackBuild(); }
-      }
-
-      if(grid && (!grid.children || grid.children.length < need)){
-        build();
-      }
-
-      var tries=0;
-      (function retry(){
-        tries++;
-        if(!grid) return;
-        var needNow=(window.seatOrder && window.seatOrder.length) || 21;
-        if(grid.children && grid.children.length >= needNow){ return; }
-        build();
-        if(tries<12) setTimeout(retry, 40);
-      })();
-    }catch(e){}
-  }
-  if(document.readyState!=='loading') ensureThumbs();
-  else document.addEventListener('DOMContentLoaded', ensureThumbs, {once:true});
-})();
-</script>
-
 
 </head>
 <body>
@@ -451,18 +289,7 @@
   }
 }
 
-    function updateTaglineSizes(){
-  try {
-    const tg = document.getElementById('tagline');
-    if(!tg) return;
-    const spans = tg.querySelectorAll('span');
-    const base = 12, max = 24;
-    for (let i=0; i<spans.length; i++){
-      const sz = base + Math.floor(Math.random()*(max-base));
-      spans[i].style.fontSize = sz + 'px';
-    }
-  } catch(_){ /* no-op */ }
-}
+    /* removed duplicate updateTaglineSizes */
 
     // 消しゴム
     let __eraserActive=false;
@@ -639,8 +466,6 @@ function getThumbForSeat(seat){
   return null;
 }
 
-
-
     function buildThumbs(){
       const grid=document.getElementById('thumbgrid'); grid.innerHTML='';
       seatOrder.forEach((seat,i)=>{
@@ -691,7 +516,6 @@ function getThumbForSeat(seat){
       const shaped = Math.pow(b, 1.35);
       return clamp(0.30 + 0.70*shaped, 0, 1);
     }
-
 
     // ===== utility fallbacks =====
     function simpleStrokePath(path, w){ if(!path||path.length<2) return;
@@ -1428,7 +1252,6 @@ function getThumbForSeat(seat){
   ctx.restore();
 }
 
-
     function drawRandSegG21Segment(a,b){
       const cfg=currentCfg(); if(!cfg||!a||!b) return;
       ensureBrushState(cfg);
@@ -1621,7 +1444,7 @@ function drawSegment(a,b){
     }
 
     function finish(){
-      updateTaglineSizes();
+      /* removed early tagline call */
       if(__eraserActive){ drawing=false; pts=[]; return; }
 
       try{
@@ -1879,7 +1702,7 @@ function drawSegment(a,b){
     })();
 
     // Init
-    buildThumbs(); layoutThumbbar(); updateTaglineSizes();
+    buildThumbs(); layoutThumbbar(); /* removed early tagline call */
   });
   </script>
 
@@ -1925,7 +1748,7 @@ document.addEventListener('DOMContentLoaded', function(){
     var spans=tg.querySelectorAll('span'); var i,n=Math.min(7,spans.length);
     for(i=0;i<n;i++){ var cls='t'+(i+1); if(!spans[i].classList.contains(cls)) spans[i].classList.add(cls); }
     var root=document.documentElement;
-    for(i=1;i<=n;i++){ var px=randInt(12,18); root.style.setProperty('--tg'+i, px+'px'); }
+    for(i=1;i<=n;i++){ var px=randInt(12,16); root.style.setProperty('--tg'+i, px+'px'); }
     if (location.search.indexOf('tagdebug=1')>=0 && window.console){
       var sizes=[]; for(i=1;i<=n;i++){ sizes.push(getComputedStyle(spans[i-1]).fontSize); }
       console.info('[tagline] %s -> %o', reason||'update', sizes);
@@ -2030,8 +1853,6 @@ document.addEventListener('DOMContentLoaded', function(){
 })();
 </script>
 
-
-
 <script id="save-move-under-G-251105q">
 (function(){
   function onReady(fn){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', fn, {once:true}); } else { fn(); } }
@@ -2048,77 +1869,86 @@ document.addEventListener('DOMContentLoaded', function(){
 })();
 </script>
 
-
-<script id="detailup_251108j">
+<script id="TaglineInit_251108ad">
 (function(){
-  'use strict';
-  // D1: crisp 1px snaps
-  try{
-    var P = CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
-    if(P && !P.__d1_snapping__){
-      var _mv = P.moveTo, _ln = P.lineTo;
-      function snap(v){ return Math.round(v) + 0.5; }
-      function shouldSnap(ctx){ try{ var w=ctx.lineWidth||1; return w<=1.5; }catch(e){ return false; } }
-      P.moveTo = function(x,y){ if(shouldSnap(this)){ x=snap(x); y=snap(y);} return _mv.call(this,x,y); };
-      P.lineTo = function(x,y){ if(shouldSnap(this)){ x=snap(x); y=snap(y);} return _ln.call(this,x,y); };
-      P.__d1_snapping__ = true;
-    }
-  }catch(_){}
-  // helper
-  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn, {once:true}); }
-  // D2: input feel
-  (function(){
-    var DEAD = 3;
-    var starts = new Map();
-    function onPD(ev){ if(!(ev && ev.target && ev.target.id==='c')) return; starts.set(ev.pointerId,{x:ev.clientX,y:ev.clientY,pass:false}); }
-    function onPM(ev){ if(!(ev && ev.target && ev.target.id==='c')) return;
-      var st = starts.get(ev.pointerId); if(!st) return; if(st.pass) return;
-      var dx=ev.clientX-st.x, dy=ev.clientY-st.y;
-      if((dx*dx+dy*dy) < DEAD*DEAD){ ev.stopImmediatePropagation(); ev.preventDefault(); }
-      else { st.pass = true; } }
-    function flushOverlay(){ try{ var ov=document.getElementById('ov'); if(!ov) return; var g=ov.getContext('2d'); if(!g) return; g.save(); g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,ov.width,ov.height); g.restore(); }catch(_){ } }
-    function synthUP(){ try{ var c=document.getElementById('c'); if(!c) return; var e=new PointerEvent('pointerup',{bubbles:true,cancelable:true,pointerId:1}); c.dispatchEvent(e); }catch(_){ } }
-    function onPU(ev){ flushOverlay(); if(ev) starts.delete(ev.pointerId); }
-    function onCancelLike(){ synthUP(); flushOverlay(); }
-    ready(function(){
-      var c=document.getElementById('c'); if(!c) return;
-      c.addEventListener('pointerdown', onPD, true);
-      c.addEventListener('pointermove', onPM, true);
-      c.addEventListener('pointerup',   onPU, true);
-      c.addEventListener('pointerleave', onPU, true);
-      c.addEventListener('pointercancel', function(){ onCancelLike(); }, true);
-      document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') onCancelLike(); }, {passive:true});
-      window.addEventListener('blur', onCancelLike, {passive:true});
-    });
-  })();
-  // D3: save naming collision-safe
-  (function(){
-    ready(function(){
-      var a=document.getElementById('saveLink'); if(!a) return;
-      function pad(n){ return ('0'+n).slice(-2); }
-      function onSave(ev){
-        try{
-          ev.preventDefault(); ev.stopImmediatePropagation();
-          var cvs=document.getElementById('c'); if(!cvs) return;
-          var out=document.createElement('canvas'); out.width=cvs.width; out.height=cvs.height;
-          var g=out.getContext('2d'); g.setTransform(1,0,0,1,0,0);
-          g.fillStyle='#fff'; g.fillRect(0,0,out.width,out.height); g.drawImage(cvs,0,0);
-          var url=out.toDataURL('image/png');
-          var now=new Date();
-          var ts=now.getFullYear().toString()+pad(now.getMonth()+1)+pad(now.getDate())+'_'+pad(now.getHours())+pad(now.getMinutes())+pad(now.getSeconds());
-          var dpr=Math.max(1,window.devicePixelRatio||1), w=Math.round(out.width/dpr), h=Math.round(out.height/dpr);
-          if(!window.__SAVE_SEQ) window.__SAVE_SEQ={}; var idx=window.__SAVE_SEQ[ts]|0; window.__SAVE_SEQ[ts]=idx+1;
-          var suffix = idx? ('_'+String.fromCharCode(96+idx+1)) : '';
-          var fname='doodle-line_'+ts+'_w'+w+'_h'+h+suffix+'.png';
-          var link=document.createElement('a'); link.download=fname; link.href=url; document.body.appendChild(link); link.click();
-          setTimeout(function(){ try{ document.body.removeChild(link);}catch(_){ } }, 120);
-        }catch(_){}
-      }
-      a.addEventListener('click', onSave, true);
-    });
-  })();
+  function kick(){ try{ if(typeof window.updateTaglineSizes==='function') window.updateTaglineSizes(); }catch(_){ } }
+  if(document.readyState!=='loading') kick();
+  else document.addEventListener('DOMContentLoaded', kick, {once:true});
 })();
 </script>
 
+<script id="ErowBypass_251108ad">
+(function(){
+  'use strict';
+  var ACTIVE = { seat:null, brushBase:null };
+
+  function seatLabelByIndex(i){
+    try{ var so=window.seatOrder; return (so && so[i]) || null; }catch(_){ return null; }
+  }
+  function brushBaseForSeat(label){
+    try{
+      if(!label) return null;
+      var m = (window.seatToBrush && window.seatToBrush[label]) || null;
+      if(!m) return null;
+      var s = String(m); var p = s.lastIndexOf('.');
+      return (p>=0)? s.slice(p+1) : s;
+    }catch(_){ return null; }
+  }
+
+  function installSeatHook(retries){
+    try{
+      var orig = window.setActiveSeat;
+      if(typeof orig === 'function'){
+        if(orig.__erow_hooked__) return true;
+        var wrapped = function(index){
+          try{
+            ACTIVE.seat = seatLabelByIndex(index);
+            ACTIVE.brushBase = brushBaseForSeat(ACTIVE.seat);
+          }catch(_){}
+          return orig.apply(this, arguments);
+        };
+        wrapped.__erow_hooked__ = true;
+        window.setActiveSeat = wrapped;
+        return true;
+      }
+    }catch(_){}
+    if((retries|0) < 30){ setTimeout(function(){ installSeatHook((retries|0)+1); }, 40); }
+    return false;
+  }
+
+  (function installGate(){
+    var origAdd = EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener = function(type, listener, opts){
+      if(type === 'pointermove' && typeof listener === 'function'){
+        var wrapped = function(ev){
+          try{
+            var t = ev && ev.target; if(!t || t.id!=='c') return listener.call(this, ev);
+            var seat = ACTIVE.seat;
+            // E-row bypass: if seat starts with 'E', skip gating entirely
+            if(seat && seat.charAt && seat.charAt(0)==='E'){
+              return listener.call(this, ev);
+            }
+            // Thin-line gating for others
+            var ctx = t.getContext && t.getContext('2d');
+            var lw = (ctx && ctx.lineWidth) || 1;
+            if(lw > 2) return listener.call(this, ev);
+            var prev = t.__gate_lastXY || {x: ev.clientX, y: ev.clientY};
+            var dx = ev.clientX - prev.x, dy = ev.clientY - prev.y;
+            t.__gate_lastXY = {x: ev.clientX, y: ev.clientY};
+            var minSeg = 1.25;
+            if((dx*dx + dy*dy) < (minSeg*minSeg)){ ev.preventDefault(); ev.stopImmediatePropagation(); return; }
+          }catch(_){}
+          return listener.call(this, ev);
+        };
+        return origAdd.call(this, type, wrapped, opts);
+      }
+      return origAdd.call(this, type, listener, opts);
+    };
+  })();
+
+  if(document.readyState!=='loading') installSeatHook(0);
+  else document.addEventListener('DOMContentLoaded', function(){ installSeatHook(0); }, {once:true});
+})();
+</script>
 
 </body></html>
