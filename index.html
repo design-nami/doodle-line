@@ -45,7 +45,30 @@
     .save-link{  position:absolute; background:none; border:0; padding:0; margin:0; font:400 14px "Yu Gothic UI","Yu Gothic","Meiryo",sans-serif; color:#000; text-decoration:underline; cursor:pointer; z-index:905; right:24px; z-index:910; top:704px; bottom:auto; }
 
     .microfoot{position:fixed; left:22px; right:auto; top:auto; bottom:16px; text-align:left; z-index:1001; font-size:12px; letter-spacing:.02em; color:#000; pointer-events:none;}
-  </style>
+  
+#mobile-note{ display:none; }
+@media (max-width: 768px){
+  #mobile-note{
+    display:flex;
+    position:fixed;
+    left:50%;
+    top:95px;
+    transform:translateX(-50%);
+    width:312px;
+    height:542px;
+    background:#fff;
+    border:none;
+    padding:8px 10px;
+    text-align:center;
+    font-size:13px;
+    line-height:1.4;
+    z-index:930;
+    pointer-events:none;
+    align-items:center;
+    justify-content:center;
+  }
+}
+</style>
 
 <style id="eraser-cyan-251105n">
 #eraserBtn.active,
@@ -120,6 +143,7 @@
 
     <div class="pill" aria-hidden="true">Doodle Line</div>
     <div class="tagline" id="tagline" aria-label="かいてあそぼう"><span>か</span><span>い</span><span>て</span><span >あ</span><span>そ</span><span>ぼ</span><span>う</span></div>
+        <div id="mobile-note">Sorry, laptop &amp; tablet only.</div>
     <div class="toprule" aria-hidden="true"></div>
   </div>
   <footer class="microfoot" id="microfoot">© Doodle Line — Code as Touch prototype by nami</footer>
