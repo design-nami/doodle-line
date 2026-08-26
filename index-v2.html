@@ -2056,19 +2056,4 @@ function drawSegment(a,b){
 })();
 </script>
 
-
-<script id="doodle-line-v2-offline-registration">
-(() => {
-  'use strict';
-  if (!('serviceWorker' in navigator)) return;
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
-  addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
-      .then(() => navigator.serviceWorker.ready)
-      .then(() => console.info('[DoodleLine V2] Offline cache ready.'))
-      .catch(error => console.warn('[DoodleLine V2] Offline cache setup failed:', error));
-  }, { once: true });
-})();
-</script>
-
 </body></html>
