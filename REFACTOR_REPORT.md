@@ -1,54 +1,58 @@
-# Doodle Line V2 prototype
+# Doodle Line V2 prototype — refactor report
 
-Generated from `index.html`; the public `main` branch and original file remain unchanged.
+The public `main` branch and original `index.html` are unchanged. This file is generated on the isolated `refactor-v2-prototype` branch.
 
 ## Implemented
 
-- prototype title
-- square utility grid markup
-- two-column square UI
-- 27 brush seats
-- six candidate seat mappings
-- candidate brush registry and missing G21 config
-- single seat map
-- memory-bounded Undo
-- single resize pipeline
-- remove listener multiplication and JS positioning
-- safe thumbnail fallbacks
-- candidate thumbnails
-- one brush activation event
-- binary-search path sampling
-- candidate brush engine
-- candidate brush route
-- pointer capture and cancellation
-- asynchronous PNG export
-- remove resize-preserve-251105n
-- remove rootfix-seat-brush-mode-251105n
-- remove save-move-under-G-251105q
-- remove TaglineInit_251108ad
-- remove ErowBypass_251108ad
-- remove save-link-fixed-251105o
-- remove save-under-grid-251105q
-- remove save position patch
-- remove side position patch
-- prototype footer
+- Mark the isolated prototype
+- Group editing controls into a two-column square grid
+- Install square two-column responsive layout
+- Reserve 27 brush positions
+- Register six candidate brush seats
+- Add missing G21 config and six candidate configs
+- Unify duplicate seat-to-brush maps
+- Bound Undo by memory rather than 20 full canvases
+- Unify resize preservation and cap canvas memory
+- Remove repeated resize listener registration and JS positioning
+- Repair thumbnail fallback paths with undefined variables
+- Add deterministic candidate thumbnails
+- Replace 84 brush listeners with one delegated click listener
+- Declare candidate render modes
+- Install six candidate brush renderers
+- Route candidate brushes
+- Fix stuck strokes, pointer ambiguity, and cancellation
+- Use asynchronous Blob PNG export
+- Expose safe test hooks on the isolated prototype
+- Remove obsolete script resize-preserve-251105n
+- Remove obsolete script rootfix-seat-brush-mode-251105n
+- Remove obsolete script save-move-under-G-251105q
+- Remove obsolete script TaglineInit_251108ad
+- Remove obsolete script ErowBypass_251108ad
+- Remove obsolete script doodle-line-offline-registration
+- Remove obsolete style save-link-fixed-251105o
+- Remove obsolete style save-under-grid-251105q
+- Remove standalone save-position patch
+- Remove standalone side-button-position patch
+- Simplify tagline interactions without duplicate input events
+- Label the prototype clearly
 
 ## Brush inventory
 
 - Existing brushes retained: 21
 - New candidates: 6
-- Total: 27
+- Prototype total: 27
 
-Candidates: Echo, Wave, Beads, Weave, Sparks, Blocks.
+Candidates: echo / wave / beads / weave / sparks / blocks.
 
-## Verification
+## Automated verification
 
-- Every inline JavaScript block parses successfully.
-- Critical pointer, resize, Undo, save, registry, and event-listener fixes are included.
-- Obsolete patch scripts are absent.
+- Parsed all 2 inline JavaScript blocks successfully.
+- Confirmed the 27-seat registry, two-column UI, pointer capture, bounded Undo, Blob export, new brush router, and inspection hooks.
+- Confirmed obsolete global event interception and post-hoc repair scripts are absent.
 
-## Not changed yet
+## Not deployed
 
-- Final tuning of the original 21 brush appearances.
-- Final selection of four to six candidates.
-- Production deployment to `main`.
+- The public site is untouched.
+- The six candidates are proposals, not final selections.
+- Existing brush aesthetics have not been deliberately retuned.
+- Production service-worker registration is absent from the confirmation build.
