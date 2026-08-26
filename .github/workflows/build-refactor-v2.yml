@@ -5,7 +5,7 @@ on:
     branches:
       - refactor-v2-prototype
     paths:
-      - scripts/build-refactor-v2.mjs
+      - scripts/build-refactor-v2.payload.*
       - .github/workflows/build-refactor-v2.yml
   workflow_dispatch:
 
@@ -30,8 +30,13 @@ jobs:
           path: index.html
           retention-days: 1
 
+      - name: Reconstruct build script
+        run: |
+          cat scripts/build-refactor-v2.payload.* | base64 --decode | gzip --decompress > /tmp/build-refactor-v2.mjs
+          node --check /tmp/build-refactor-v2.mjs
+
       - name: Build and verify prototype
-        run: node scripts/build-refactor-v2.mjs
+        run: node /tmp/build-refactor-v2.mjs
 
       - name: Upload generated prototype
         uses: actions/upload-artifact@v4
