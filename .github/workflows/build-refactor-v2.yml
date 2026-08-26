@@ -5,7 +5,7 @@ on:
     branches:
       - refactor-v2-prototype
     paths:
-      - scripts/build-refactor-v2.payload.*
+      - scripts/build-refactor-v2.mjs
       - .github/workflows/build-refactor-v2.yml
   workflow_dispatch:
 
@@ -23,20 +23,11 @@ jobs:
           ref: refactor-v2-prototype
           fetch-depth: 0
 
-      - name: Preserve source for local verification
-        uses: actions/upload-artifact@v4
-        with:
-          name: doodle-line-source
-          path: index.html
-          retention-days: 1
+      - name: Verify build script
+        run: node --check scripts/build-refactor-v2.mjs
 
-      - name: Reconstruct build script
-        run: |
-          cat scripts/build-refactor-v2.payload.* | base64 --decode | gzip --decompress > /tmp/build-refactor-v2.mjs
-          node --check /tmp/build-refactor-v2.mjs
-
-      - name: Build and verify prototype
-        run: node /tmp/build-refactor-v2.mjs
+      - name: Build prototype
+        run: node scripts/build-refactor-v2.mjs
 
       - name: Verify generated structure
         run: |
@@ -46,11 +37,24 @@ jobs:
           const html = fs.readFileSync('index-v2.html', 'utf8');
           const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
           scripts.forEach((match, index) => new vm.Script(match[1], { filename: `generated-script-${index + 1}.js` }));
-          const required = ['H27', 'setPointerCapture', 'UNDO_MAX_BYTES', 'toBlob', 'drawV2CandidateSegment'];
+          const required = [
+            'H27',
+            'grid-template-columns:repeat(2',
+            'setPointerCapture',
+            'UNDO_MAX_BYTES',
+            'toBlob',
+            'drawV2CandidateSegment'
+          ];
           for (const token of required) {
             if (!html.includes(token)) throw new Error(`Missing generated token: ${token}`);
           }
-          const forbidden = ['EventTarget.prototype.addEventListener', 'doodle-line-v2-offline-registration'];
+          const forbidden = [
+            'EventTarget.prototype.addEventListener',
+            'resize-preserve-251105n',
+            'rootfix-seat-brush-mode-251105n',
+            'save-move-under-G-251105q',
+            'doodle-line-v2-offline-registration'
+          ];
           for (const token of forbidden) {
             if (html.includes(token)) throw new Error(`Obsolete or unsafe token remains: ${token}`);
           }
