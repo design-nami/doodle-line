@@ -9,118 +9,62 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Doodle Line" />
-  <link rel="manifest" href="./manifest.json" />
-  <link rel="apple-touch-icon" href="./icon-180.png" />
-  <style>
-    :root{--accent:#80FF80;--fg:#000;--bg:#fff}
-    html,body{margin:0;height:100%;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP",sans-serif}
-    #wrap{position:fixed;inset:0}
-    canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
-    .toprule{position:fixed;left:0;right:0;top:0;height:1px;background:var(--accent)}
-    .thumbbar{position:fixed;right:20px;top: 74px;z-index:905}
-    .thumbgrid{display:grid;grid-template-columns:72px 72px 72px;column-gap:10px;row-gap:16px}
-    .thumb{width:72px;height:72px;border:1px solid #000;border-radius:50%;background:#fff;position:relative;cursor:pointer;overflow:hidden}
-    .thumb.active{outline:4px solid var(--accent)}
-    .thumb{background-repeat:no-repeat;background-position:50% 50%;background-size:cover}
-    .thumb .label{position:absolute;left:0;right:0;bottom:2px;text-align:center;font-size:11px;color:#000;background:rgba(255,255,255,.7)}
-    canvas.overlay{position:fixed;inset:0;display:block;width:100%;height:100%;touch-action:none;pointer-events:none;z-index:1}
-    .sidebtn{position:fixed;right:302px;width:72px;height:72px;border:1px solid #000;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
-    .sidebtn.eraser{top:250px}
-
-#clearBtn{ top:426px; }
-
-#backBtn{ top:338px; }
-
-#eraserBtn{ top:250px; }
-
-    .sidebtn span{display:inline-block;text-align:center;line-height:1.3;font-size:14px}
-    .sidebtn.clear span{line-height:1.45}
-    .sidebtn.eraser span{line-height:1.45}
-    .sidebtn.save span{line-height:1.45}
-    .sidebtn.active{background:#80FF80}
-    .sidebtn.pressed{background:#80FF80}
-    .sidebtn[disabled]{opacity:.4;cursor:default}
-    .sidebtn.back{top:338px}
-    .sidebtn.clear{top:426px}
-    .sidebtn.save{top:551px}
-    .pill{position:fixed;right:23px;top:12px;font:400 17px "Yu Gothic UI","Yu Gothic","Meiryo",sans-serif}
-    .tagline{position:fixed;right:22px;top:36px;font-weight:400;letter-spacing:.04em;color:#000}
-    .tagline span{display:inline-block;margin-left:1px}
-    
-    body{min-height:calc(100vh + 180px);}
-    
-    .save-link{  position:absolute; background:none; border:0; padding:0; margin:0; font:400 14px "Yu Gothic UI","Yu Gothic","Meiryo",sans-serif; color:#000; text-decoration:underline; cursor:pointer; z-index:905; right:24px; z-index:910; top:704px; bottom:auto; }
-
-    .microfoot{position:fixed; left:22px; right:auto; top:auto; bottom:16px; text-align:left; z-index:1001; font-size:12px; letter-spacing:.02em; color:#000; pointer-events:none;}
-  
-#mobile-note{ display:none; }
-@media (max-width: 768px){
-  #mobile-note{
-    display:flex;
-    position:fixed;
-    left:50%;
-    top:95px;
-    transform:translateX(-50%);
-    width:312px;
-    height:542px;
-    background:#fff;
-    border:none;
-    padding:8px 10px;
-    text-align:center;
-    font-size:13px;
-    line-height:1.4;
-    z-index:930;
-    pointer-events:none;
-    align-items:center;
-    justify-content:center;
-  }
-}
-</style>
-
-<style id="eraser-cyan-251105n">
-#eraserBtn.active,
-#eraserBtn[aria-pressed="true"]{
-  background-color:#C0FFFF !important;
-  border:1px solid #000 !important;
-  color:#000 !important;
-  -webkit-text-fill-color:#000;
-}
-/* Save-link fixed placement (定位置) */
-.save-link{ position:fixed !important; right:22px !important; top:712px !important; bottom:auto !important; z-index:1002 !important; }
-
-/* Tagline CSS variables */
-:root{
-  --tg1:16px; --tg2:16px; --tg3:16px; --tg4:16px; --tg5:16px; --tg6:16px; --tg7:16px;
-}
-#tagline span.t1{ font-size: var(--tg1); }
-#tagline span.t2{ font-size: var(--tg2); }
-#tagline span.t3{ font-size: var(--tg3); }
-#tagline span.t4{ font-size: var(--tg4); }
-#tagline span.t5{ font-size: var(--tg5); }
-#tagline span.t6{ font-size: var(--tg6); }
-#tagline span.t7{ font-size: var(--tg7); }
-</style>
-
-<style id="tagline-offset-251108ad">
-  #tagline { transform: translateY(2px); will-change: transform; }
-</style>
-
 
 <style id="doodle-line-v2-ui">
   :root {
+    --accent: #80FF80;
+    --eraser-accent: #C0FFFF;
+    --fg: #000;
+    --bg: #fff;
     --tool-size: 72px;
     --tool-gap: 10px;
     --tool-width: calc(var(--tool-size) * 2 + var(--tool-gap));
     --tool-right: 20px;
+    --tg1: 16px;
+    --tg2: 16px;
+    --tg3: 16px;
+    --tg4: 16px;
+    --tg5: 16px;
+    --tg6: 16px;
+    --tg7: 16px;
   }
 
-  html, body {
-    overflow: hidden;
-    min-height: 100%;
-  }
-
+  html,
   body {
-    min-height: 100vh !important;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif;
+  }
+
+  #wrap {
+    position: fixed;
+    inset: 0;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  canvas.overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .toprule {
+    position: fixed;
+    inset: 0 0 auto;
+    height: 1px;
+    background: var(--accent);
   }
 
   .utilitygrid {
@@ -135,35 +79,49 @@
     width: var(--tool-width);
   }
 
-  .utilitygrid .sidebtn,
-  #saveLink.sidebtn {
-    position: relative !important;
-    inset: auto !important;
-    width: var(--tool-size) !important;
-    height: var(--tool-size) !important;
+  .sidebtn {
+    position: relative;
+    width: var(--tool-size);
+    height: var(--tool-size);
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
     border: 1px solid #000;
-    border-radius: 0 !important;
+    border-radius: 0;
     background: #fff;
     color: #000;
-    text-decoration: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: auto !important;
   }
 
-  .utilitygrid .sidebtn span {
+  .sidebtn span {
+    display: inline-block;
+    text-align: center;
     font: 400 13px/1.35 "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
   }
 
+  .sidebtn.active,
+  .sidebtn.pressed {
+    background: var(--accent);
+  }
+
+  #eraserBtn.active,
+  #eraserBtn[aria-pressed="true"] {
+    background: var(--eraser-accent);
+  }
+
+  .sidebtn[disabled] {
+    opacity: .4;
+    cursor: default;
+  }
+
   .thumbbar {
-    position: fixed !important;
+    position: fixed;
     z-index: 905;
-    top: 248px !important;
-    right: var(--tool-right) !important;
+    top: 248px;
+    right: var(--tool-right);
     bottom: 18px;
     width: var(--tool-width);
     overflow-x: hidden;
@@ -178,48 +136,93 @@
   }
 
   .thumbgrid {
-    display: grid !important;
-    grid-template-columns: repeat(2, var(--tool-size)) !important;
+    display: grid;
+    grid-template-columns: repeat(2, var(--tool-size));
     grid-auto-rows: var(--tool-size);
-    gap: var(--tool-gap) !important;
+    gap: var(--tool-gap);
     width: var(--tool-width);
   }
 
   .thumb {
-    width: var(--tool-size) !important;
-    height: var(--tool-size) !important;
-    border-radius: 0 !important;
+    position: relative;
+    width: var(--tool-size);
+    height: var(--tool-size);
     box-sizing: border-box;
+    overflow: hidden;
+    border: 1px solid #000;
+    border-radius: 0;
+    background: #fff no-repeat 50% 50% / cover;
+    cursor: pointer;
   }
 
   .thumb.active {
-    outline: 4px solid var(--accent) !important;
+    outline: 4px solid var(--accent);
     outline-offset: -4px;
   }
 
   .thumb[data-seat^="H"]::after {
-    content: "new";
+    content: "";
     position: absolute;
-    right: 4px;
-    bottom: 3px;
-    font: 400 9px/1 system-ui, sans-serif;
-    letter-spacing: .04em;
-    background: rgba(255,255,255,.82);
+    right: 5px;
+    bottom: 5px;
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
   }
 
-  .pill,
+  .pill {
+    position: fixed;
+    top: 12px;
+    right: var(--tool-right);
+    font: 400 17px "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+  }
+
   .tagline {
-    right: var(--tool-right) !important;
+    position: fixed;
+    top: 36px;
+    right: var(--tool-right);
+    color: #000;
+    font-weight: 400;
+    letter-spacing: .04em;
+    transform: translateY(2px);
+  }
+
+  .tagline span {
+    display: inline-block;
+    margin-left: 1px;
+  }
+
+  #tagline span.t1 { font-size: var(--tg1); }
+  #tagline span.t2 { font-size: var(--tg2); }
+  #tagline span.t3 { font-size: var(--tg3); }
+  #tagline span.t4 { font-size: var(--tg4); }
+  #tagline span.t5 { font-size: var(--tg5); }
+  #tagline span.t6 { font-size: var(--tg6); }
+  #tagline span.t7 { font-size: var(--tg7); }
+
+  .microfoot {
+    position: fixed;
+    left: 22px;
+    bottom: 16px;
+    z-index: 1001;
+    color: #000;
+    font-size: 12px;
+    letter-spacing: .02em;
+    pointer-events: none;
   }
 
   #mobile-note {
-    display: none !important;
+    display: none;
   }
 
   @media (max-height: 520px) {
-    :root { --tool-size: 60px; --tool-gap: 8px; }
+    :root {
+      --tool-size: 60px;
+      --tool-gap: 8px;
+    }
+
     .utilitygrid { top: 58px; }
-    .thumbbar { top: 194px !important; }
+    .thumbbar { top: 194px; }
     .pill { top: 8px; }
     .tagline { top: 31px; }
   }
@@ -370,12 +373,13 @@
     const UNDO_MAX_BYTES=96*1024*1024;
     const undoStack=[];
     let undoBytes=0;
+    let hasArtwork=false;
     function updateBackEnabled(){ const b=document.getElementById('backBtn'); if(b) b.disabled=(undoStack.length===0); }
     function _makeSnapshot(){
       try{
         const off=document.createElement('canvas');
         off.width=cvs.width; off.height=cvs.height;
-        off._dpr=dpr; off._bytes=off.width*off.height*4;
+        off._dpr=dpr; off._bytes=off.width*off.height*4; off._hasArtwork=hasArtwork;
         const g=off.getContext('2d'); g.setTransform(1,0,0,1,0,0); g.drawImage(cvs,0,0);
         return off;
       }catch(e){ return null; }
@@ -388,20 +392,22 @@
       ctx.fillStyle='#fff'; ctx.fillRect(0,0,cvs.width,cvs.height);
       ctx.drawImage(s,0,0,s.width,s.height,0,0,s.width*scale,s.height*scale);
       ctx.restore();
+      hasArtwork=!!s._hasArtwork;
     }
-    function pushSnapshot(){
-      const s=_makeSnapshot(); if(!s) return;
+    function addSnapshot(s){
+      if(!s) return false;
       const bytes=s._bytes||0;
       while(undoStack.length && undoBytes+bytes>UNDO_MAX_BYTES){
         const removed=undoStack.shift(); undoBytes-=removed._bytes||0;
       }
-      if(bytes<=UNDO_MAX_BYTES){ undoStack.push(s); undoBytes+=bytes; }
-      updateBackEnabled();
+      if(bytes>UNDO_MAX_BYTES){ updateBackEnabled(); return false; }
+      undoStack.push(s); undoBytes+=bytes; updateBackEnabled(); return true;
     }
+    function pushSnapshot(){ return addSnapshot(_makeSnapshot()); }
     function restoreSnapshot(){
-      if(!undoStack.length) return;
+      if(!undoStack.length) return false;
       const s=undoStack.pop(); undoBytes-=s._bytes||0;
-      drawSnapshot(s); updateBackEnabled();
+      drawSnapshot(s); updateBackEnabled(); return true;
     }
 
     let canvasReady=false;
@@ -1885,7 +1891,7 @@ function drawSegment(a,b){
     // 入力 — one active pointer, pointer capture and explicit cancellation
     let activePointerId=null;
     let lastInputPoint=null;
-    let strokeSnapshotPushed=false;
+    let strokeSnapshot=null;
 
     function inputPoint(e){
       const r=cvs.getBoundingClientRect();
@@ -1897,18 +1903,30 @@ function drawSegment(a,b){
       if(e.pointerType==='mouse'&&e.button!==0) return;
       e.preventDefault();
       activePointerId=e.pointerId;
+      strokeSnapshot=null;
       try{ cvs.setPointerCapture(e.pointerId); }catch(_){ }
       window.__strokeTick=((window.__strokeTick|0)+1)|0;
       resetStrokeState(ctx); resetStrokeState(ovctx);
       drawing=true; pts.length=0; clearOverlay();
       const first=inputPoint(e); pts.push(first); lastInputPoint=first;
-      strokeSnapshotPushed=false; __drawIndex=0; __rafPending=false;
+      __drawIndex=0; __rafPending=false;
       const cfg=currentCfg(); ensureBrushState(cfg);
       if(cfg&&cfg._state){
         const S=cfg._state; S.occSnow=new Map(); S.bigDotsCenters=[]; S.snowPhase=0; S.snowDistAcc=0;
         S.snowTotal=0; S.snowP=0.4+Math.random()*0.1; S.bigDotsDist=0; S.spraySide=(Math.random()<0.5?1:-1);
         S.hatchResid=0; S.hatchAlt=0; if(S.segOut){S.segOut.remain=0;S.segOut.alt=0;S.segOut.acc=0;}
       }
+    }
+
+    function ensureStrokeSnapshot(){
+      if(!strokeSnapshot) strokeSnapshot=_makeSnapshot();
+      return !!strokeSnapshot;
+    }
+
+    function acceptStrokePoint(p){
+      ensureStrokeSnapshot();
+      pts.push(p); lastInputPoint=p; hasArtwork=true;
+      if(!__rafPending){ __rafPending=true; requestAnimationFrame(__flushDraw); }
     }
 
     function moveStroke(e){
@@ -1919,29 +1937,28 @@ function drawSegment(a,b){
       const cfg=currentCfg();
       const thin=!!(cfg&&cfg.width&&cfg.width.min<=2);
       if(thin&&currentSeat().charAt(0)!=='E'&&dx*dx+dy*dy<1.25*1.25) return;
-      if(!strokeSnapshotPushed){ pushSnapshot(); strokeSnapshotPushed=true; }
-      pts.push(p); lastInputPoint=p;
-      if(!__rafPending){ __rafPending=true; requestAnimationFrame(__flushDraw); }
+      acceptStrokePoint(p);
     }
 
     function endStroke(e,cancelled){
       if(activePointerId===null) return;
       if(e&&e.pointerId!=null&&e.pointerId!==activePointerId) return;
       const pointerId=activePointerId;
+      activePointerId=null;
+
       if(cancelled){
         __rafPending=false; drawing=false; pts=[]; clearOverlay();
-        if(strokeSnapshotPushed) restoreSnapshot();
+        if(strokeSnapshot) drawSnapshot(strokeSnapshot);
       }else{
         if(e&&drawing){
           const p=inputPoint(e),prev=pts[pts.length-1];
-          if(!prev||Math.hypot(p.x-prev.x,p.y-prev.y)>0.01){
-            if(!strokeSnapshotPushed){ pushSnapshot(); strokeSnapshotPushed=true; }
-            pts.push(p);
-          }
+          if(!prev||Math.hypot(p.x-prev.x,p.y-prev.y)>0.01) acceptStrokePoint(p);
         }
         __flushDraw(); finish();
+        if(strokeSnapshot) addSnapshot(strokeSnapshot);
       }
-      activePointerId=null; lastInputPoint=null; strokeSnapshotPushed=false;
+
+      strokeSnapshot=null; lastInputPoint=null;
       try{ if(cvs.hasPointerCapture(pointerId)) cvs.releasePointerCapture(pointerId); }catch(_){ }
     }
 
@@ -1960,7 +1977,7 @@ function drawSegment(a,b){
       const saveLink=document.getElementById('saveLink');
       if(eraserBtn) eraserBtn.addEventListener('click', function(){ setEraserActive(!__eraserActive); eraserBtn.classList.add('pressed'); setTimeout(()=>eraserBtn.classList.remove('pressed'),120); });
       if(backBtn)   backBtn.addEventListener('click', function(){ restoreSnapshot(); backBtn.classList.add('pressed'); setTimeout(()=>backBtn.classList.remove('pressed'),120); });
-      if(clearBtn)  clearBtn.addEventListener('click', function(){ pushSnapshot(); fillWhite(); clearBtn.classList.add('pressed'); setTimeout(()=>clearBtn.classList.remove('pressed'),120); });
+      if(clearBtn) clearBtn.addEventListener('click',function(){ if(hasArtwork){ pushSnapshot(); fillWhite(); hasArtwork=false; } clearBtn.classList.add('pressed'); setTimeout(()=>clearBtn.classList.remove('pressed'),120); });
       if(saveLink) saveLink.addEventListener('click',function(){
         try{
           const out=document.createElement('canvas'); out.width=cvs.width; out.height=cvs.height;
