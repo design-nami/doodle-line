@@ -61,13 +61,17 @@ jobs:
           console.log(`Verified ${scripts.length} generated script blocks.`);
           NODE
 
-      - name: Upload generated prototype
+      - name: Upload complete test package
         uses: actions/upload-artifact@v4
         with:
           name: doodle-line-v2-prototype
           path: |
             index-v2.html
             REFACTOR_REPORT.md
+            manifest.json
+            icon-180.png
+            icon-192.png
+            icon-512.png
           retention-days: 14
 
       - name: Commit generated prototype
