@@ -10,6 +10,10 @@ on:
       - .github/workflows/build-refactor-v2.yml
   workflow_dispatch:
 
+concurrency:
+  group: doodle-line-v2-prototype-build
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -85,4 +89,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index-v2.html REFACTOR_REPORT.md
           git commit -m "Build refactored V2 prototype"
+          git fetch origin refactor-v2-prototype
+          git rebase origin/refactor-v2-prototype
           git push origin HEAD:refactor-v2-prototype
