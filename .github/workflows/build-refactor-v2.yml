@@ -38,33 +38,6 @@ jobs:
       - name: Build and verify prototype
         run: node /tmp/build-refactor-v2.mjs
 
-      - name: Restore clean offline registration
-        run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-          const path = 'index-v2.html';
-          let html = fs.readFileSync(path, 'utf8');
-          if (!html.includes('doodle-line-v2-offline-registration')) {
-            const registration = `
-          <script id="doodle-line-v2-offline-registration">
-          (() => {
-            'use strict';
-            if (!('serviceWorker' in navigator)) return;
-            if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
-            addEventListener('load', () => {
-              navigator.serviceWorker.register('./service-worker.js', { scope: './' })
-                .then(() => navigator.serviceWorker.ready)
-                .then(() => console.info('[DoodleLine V2] Offline cache ready.'))
-                .catch(error => console.warn('[DoodleLine V2] Offline cache setup failed:', error));
-            }, { once: true });
-          })();
-          <\/script>
-          `;
-            html = html.replace('</body>', `${registration}\n</body>`);
-            fs.writeFileSync(path, html, 'utf8');
-          }
-          NODE
-
       - name: Verify generated structure
         run: |
           node <<'NODE'
@@ -73,9 +46,13 @@ jobs:
           const html = fs.readFileSync('index-v2.html', 'utf8');
           const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
           scripts.forEach((match, index) => new vm.Script(match[1], { filename: `generated-script-${index + 1}.js` }));
-          const required = ['H27', 'setPointerCapture', 'UNDO_MAX_BYTES', 'toBlob', 'doodle-line-v2-offline-registration'];
+          const required = ['H27', 'setPointerCapture', 'UNDO_MAX_BYTES', 'toBlob', 'drawV2CandidateSegment'];
           for (const token of required) {
             if (!html.includes(token)) throw new Error(`Missing generated token: ${token}`);
+          }
+          const forbidden = ['EventTarget.prototype.addEventListener', 'doodle-line-v2-offline-registration'];
+          for (const token of forbidden) {
+            if (html.includes(token)) throw new Error(`Obsolete or unsafe token remains: ${token}`);
           }
           console.log(`Verified ${scripts.length} generated script blocks.`);
           NODE
@@ -87,7 +64,7 @@ jobs:
           path: |
             index-v2.html
             REFACTOR_REPORT.md
-          retention-days: 7
+          retention-days: 14
 
       - name: Commit generated prototype
         run: |
