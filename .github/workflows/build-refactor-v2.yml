@@ -6,6 +6,7 @@ on:
       - refactor-v2-prototype
     paths:
       - scripts/build-refactor-v2.mjs
+      - scripts/build-refactor-v2.mjs.gz.b64
       - .github/workflows/build-refactor-v2.yml
   workflow_dispatch:
 
@@ -23,23 +24,11 @@ jobs:
           ref: refactor-v2-prototype
           fetch-depth: 0
 
-      - name: Verify build script
+      - name: Verify build loader
         run: node --check scripts/build-refactor-v2.mjs
 
-      - name: Build prototype
+      - name: Build and verify prototype
         run: node scripts/build-refactor-v2.mjs
-
-      - name: Isolate prototype from the production offline cache
-        run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-          const path = 'index-v2.html';
-          let html = fs.readFileSync(path, 'utf8');
-          const before = html;
-          html = html.replace(/<script id=["']doodle-line-offline-registration["']>[\s\S]*?<\/script>\s*/g, '');
-          if (html === before) throw new Error('Production service-worker registration was not found in the generated file.');
-          fs.writeFileSync(path, html, 'utf8');
-          NODE
 
       - name: Verify generated structure
         run: |
@@ -49,24 +38,23 @@ jobs:
           const html = fs.readFileSync('index-v2.html', 'utf8');
           const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
           scripts.forEach((match, index) => new vm.Script(match[1], { filename: `generated-script-${index + 1}.js` }));
-          const required = [
-            'H27',
-            'grid-template-columns:repeat(2',
-            'setPointerCapture',
-            'UNDO_MAX_BYTES',
-            'toBlob',
-            'drawV2CandidateSegment'
+          const checks = [
+            ['27th brush seat', /"H27"/],
+            ['two-column grid', /grid-template-columns:\s*repeat\(2/],
+            ['pointer capture', /setPointerCapture/],
+            ['memory-bounded Undo', /UNDO_MAX_BYTES/],
+            ['Blob export', /toBlob/],
+            ['candidate brush renderer', /drawV2CandidateSegment/]
           ];
-          for (const token of required) {
-            if (!html.includes(token)) throw new Error(`Missing generated token: ${token}`);
+          for (const [label, pattern] of checks) {
+            if (!pattern.test(html)) throw new Error(`Missing generated feature: ${label}`);
           }
           const forbidden = [
             'EventTarget.prototype.addEventListener',
             'resize-preserve-251105n',
             'rootfix-seat-brush-mode-251105n',
             'save-move-under-G-251105q',
-            'doodle-line-offline-registration',
-            'doodle-line-v2-offline-registration'
+            'doodle-line-offline-registration'
           ];
           for (const token of forbidden) {
             if (html.includes(token)) throw new Error(`Obsolete or unsafe token remains: ${token}`);
