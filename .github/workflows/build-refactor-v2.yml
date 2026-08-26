@@ -6,7 +6,7 @@ on:
       - refactor-v2-prototype
     paths:
       - scripts/build-refactor-v2.mjs
-      - scripts/build-refactor-v2.mjs.gz.b64
+      - scripts/build-refactor-v2.payload.*
       - .github/workflows/build-refactor-v2.yml
   workflow_dispatch:
 
@@ -43,27 +43,29 @@ jobs:
           const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
           scripts.forEach((match, index) => new vm.Script(match[1], { filename: `generated-script-${index + 1}.js` }));
           const checks = [
-            ['27th brush seat', /"H27"/],
+            ['26th brush seat', /"H26"/],
+            ['no orphan 27th seat', /"H27"/, false],
             ['two-column grid', /grid-template-columns:\s*repeat\(2/],
             ['pointer capture', /setPointerCapture/],
             ['memory-bounded Undo', /UNDO_MAX_BYTES/],
             ['Blob export', /toBlob/],
             ['candidate brush renderer', /drawV2CandidateSegment/]
           ];
-          for (const [label, pattern] of checks) {
-            if (!pattern.test(html)) throw new Error(`Missing generated feature: ${label}`);
+          for (const [label, pattern, expected = true] of checks) {
+            if (pattern.test(html) !== expected) throw new Error(`Generated feature check failed: ${label}`);
           }
           const forbidden = [
             'EventTarget.prototype.addEventListener',
             'resize-preserve-251105n',
             'rootfix-seat-brush-mode-251105n',
             'save-move-under-G-251105q',
-            'doodle-line-offline-registration'
+            'doodle-line-offline-registration',
+            'navigator.serviceWorker.register'
           ];
           for (const token of forbidden) {
             if (html.includes(token)) throw new Error(`Obsolete or unsafe token remains: ${token}`);
           }
-          console.log(`Verified ${scripts.length} generated script blocks.`);
+          console.log(`Verified ${scripts.length} generated script blocks and the 26-brush layout.`);
           NODE
 
       - name: Upload complete test package
@@ -88,7 +90,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index-v2.html REFACTOR_REPORT.md
-          git commit -m "Build refactored V2 prototype"
+          git commit -m "Build refactored five-brush V2 prototype"
           git fetch origin refactor-v2-prototype
           git rebase origin/refactor-v2-prototype
           git push origin HEAD:refactor-v2-prototype
