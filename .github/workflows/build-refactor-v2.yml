@@ -1,0 +1,38 @@
+name: Build Doodle Line V2 prototype
+
+on:
+  push:
+    branches:
+      - refactor-v2-prototype
+    paths:
+      - scripts/build-refactor-v2.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out prototype branch
+        uses: actions/checkout@v4
+        with:
+          ref: refactor-v2-prototype
+          fetch-depth: 0
+
+      - name: Build and verify prototype
+        run: node scripts/build-refactor-v2.mjs
+
+      - name: Commit generated prototype
+        run: |
+          if git diff --quiet -- index-v2.html REFACTOR_REPORT.md; then
+            echo "Prototype is already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index-v2.html REFACTOR_REPORT.md
+          git commit -m "Build refactored V2 prototype"
+          git push origin HEAD:refactor-v2-prototype
