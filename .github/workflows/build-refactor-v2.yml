@@ -29,6 +29,18 @@ jobs:
       - name: Build prototype
         run: node scripts/build-refactor-v2.mjs
 
+      - name: Isolate prototype from the production offline cache
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'index-v2.html';
+          let html = fs.readFileSync(path, 'utf8');
+          const before = html;
+          html = html.replace(/<script id=["']doodle-line-offline-registration["']>[\s\S]*?<\/script>\s*/g, '');
+          if (html === before) throw new Error('Production service-worker registration was not found in the generated file.');
+          fs.writeFileSync(path, html, 'utf8');
+          NODE
+
       - name: Verify generated structure
         run: |
           node <<'NODE'
@@ -53,6 +65,7 @@ jobs:
             'resize-preserve-251105n',
             'rootfix-seat-brush-mode-251105n',
             'save-move-under-G-251105q',
+            'doodle-line-offline-registration',
             'doodle-line-v2-offline-registration'
           ];
           for (const token of forbidden) {
